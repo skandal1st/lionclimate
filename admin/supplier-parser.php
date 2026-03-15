@@ -218,9 +218,18 @@ function findCharInHtml($html, $label) {
 function extractBrandModelFromTitle($title) {
     $brand = '';
     $model = '';
-    if ($title && preg_match('/\s([A-Za-z][A-Za-z0-9\-]+)\s+([A-Z0-9\-\.\/]+(?:\s*\/\s*[A-Z0-9\-\.\/]+)?)\s*$/u', $title, $m)) {
+    if (!$title) return [$brand, $model];
+    $title = trim($title);
+    if (preg_match('/\s([A-Za-z][A-Za-z0-9\-]+)\s+([A-Z0-9\-\.\/]+(?:\s*\/\s*[A-Z0-9\-\.\/]+)?)\s*$/u', $title, $m)) {
         $brand = trim($m[1]);
         $model = trim($m[2]);
+        return [$brand, $model];
+    }
+    if (preg_match('/^([A-Za-z][A-Za-z0-9\-]*)\s+/u', $title, $m)) {
+        $brand = trim($m[1]);
+    }
+    if (preg_match('/\b([A-Z][A-Z0-9\-]+(?:\/[A-Z0-9\-]+)*)\s*$/u', $title, $m)) {
+        $model = trim($m[1]);
     }
     return [$brand, $model];
 }
@@ -285,34 +294,41 @@ function parseKlimatov($html, $url) {
 }
 
 /**
- * Извлечь фрагмент HTML с блоком характеристик Market777 (между "Общие параметры" и "Описание").
+ * Извлечь фрагмент HTML с блоком характеристик Market777 (таблицы между "Общие параметры" и "Описание").
  */
 function extractMarket777SpecsFragment($html) {
-    $html = preg_replace('/\s+/u', ' ', $html);
-    $start = stripos($html, 'Общие параметры');
-    if ($start === false) {
-        $start = stripos($html, 'Основные характеристики');
-    }
-    if ($start === false) {
-        $start = stripos($html, 'Характеристики Energolux');
-    }
-    if ($start === false) {
-        $start = stripos($html, 'Характеристики ');
+    $htmlNorm = preg_replace('/\s+/u', ' ', $html);
+    $starts = [
+        stripos($htmlNorm, 'Общие параметры'),
+        stripos($htmlNorm, 'Основные характеристики'),
+        stripos($htmlNorm, 'Тип кондиционера'),
+        stripos($htmlNorm, 'Гарантийный срок'),
+        stripos($htmlNorm, 'Характеристики Energolux'),
+        stripos($htmlNorm, 'Артикул'),
+    ];
+    $start = false;
+    foreach ($starts as $s) {
+        if ($s !== false) {
+            $start = $start === false ? $s : min($start, $s);
+        }
     }
     if ($start === false) {
         return '';
     }
-    $end = stripos($html, 'Описание Energolux', $start);
+    $end = stripos($htmlNorm, 'Описание Energolux', $start);
     if ($end === false) {
-        $end = stripos($html, 'Купить недорого', $start);
+        $end = stripos($htmlNorm, 'Купить недорого', $start);
     }
     if ($end === false) {
-        $end = stripos($html, 'Оплата', $start);
+        $end = stripos($htmlNorm, 'Оплата', $start);
+    }
+    if ($end === false) {
+        $end = stripos($htmlNorm, 'Отзывы', $start);
     }
     if ($end === false || $end <= $start) {
-        return substr($html, $start, 50000);
+        return substr($htmlNorm, $start, 60000);
     }
-    return substr($html, $start, $end - $start);
+    return substr($htmlNorm, $start, $end - $start);
 }
 
 /**
@@ -329,7 +345,7 @@ function extractPairsFromHtmlTables($html) {
     $html = strip_tags($html);
     $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     $lines = preg_split('/\n+/u', $html, -1, PREG_SPLIT_NO_EMPTY);
-    $skipLabels = ['previous', 'next', 'отложенные', 'корзина', 'сравнение', 'цена', 'купить', 'в избранное', 'в сравнении', 'в корзине', 'вопрос', 'ваше имя', 'телефон', 'e-mail', 'обязательные поля', 'отправить', 'сбросить', 'y', 'n', '—', '?', '', 'все характеристики', 'рассчитать доставку', 'кешбек', 'авторизуйтесь', 'назад'];
+    $skipLabels = ['previous', 'next', 'отложенные', 'корзина', 'сравнение', 'цена', 'купить', 'в избранное', 'в сравнении', 'в корзине', 'вопрос', 'ваше имя', 'телефон', 'e-mail', 'обязательные поля', 'отправить', 'сбросить', 'y', 'n', '—', '?', '', 'все характеристики', 'рассчитать доставку', 'кешбек', 'авторизуйтесь', 'назад', 'автомобильная акустика'];
 
     $i = 0;
     while ($i < count($lines)) {
@@ -383,25 +399,69 @@ function extractPairsFromHtmlTables($html) {
 
 /**
  * Цена для Market777: основная цена товара (игнорировать допы типа "3600 руб. + 1 год гарантии").
+ * Берём максимальную подходящую цену — допы обычно меньше основной.
  */
 function parsePriceMarket777($html) {
-    if (preg_match_all('/(\d{1,2}\s?\d{3})\s*₽/u', $html, $m)) {
-        foreach ($m[1] as $raw) {
+    $candidates = [];
+    if (preg_match_all('/(\d{1,2}\s?\d{3})\s*₽/u', $html, $m, PREG_OFFSET_CAPTURE)) {
+        foreach ($m[1] as $idx => $item) {
+            $raw = $item[0];
+            $pos = $item[1];
             $price = (int) preg_replace('/\s/', '', $raw);
-            if ($price >= 5000 && $price <= 999999) {
-                return $price;
-            }
+            if ($price < 10000 || $price > 999999) continue;
+            $context = substr($html, max(0, $pos - 80), 160);
+            if (preg_match('/руб\.?\s*\+\s*\d|гарантии|гарантия/u', $context)) continue;
+            $candidates[] = $price;
         }
     }
-    if (preg_match_all('/(\d{1,2}\s?\d{3})\s*руб/u', $html, $m)) {
-        foreach ($m[1] as $raw) {
+    if (preg_match_all('/(\d{1,2}\s?\d{3})\s*руб/u', $html, $m, PREG_OFFSET_CAPTURE)) {
+        foreach ($m[1] as $idx => $item) {
+            $raw = $item[0];
+            $pos = $item[1];
             $price = (int) preg_replace('/\s/', '', $raw);
-            if ($price >= 5000 && $price <= 999999) {
-                return $price;
-            }
+            if ($price < 10000 || $price > 999999) continue;
+            $context = substr($html, max(0, $pos - 80), 160);
+            if (preg_match('/руб\.?\s*\+\s*\d|гарантии|гарантия/u', $context)) continue;
+            $candidates[] = $price;
         }
+    }
+    if (!empty($candidates)) {
+        return max($candidates);
     }
     return parsePriceFromHtml($html);
+}
+
+/**
+ * Удалить из пар мусорные характеристики (навигация, повторы названия, булевы Y/N).
+ */
+function filterMarket777Pairs($pairs) {
+    $dropLabels = ['Отложенные', 'Назад', 'Previous', 'Next', 'Характеристики', 'Описание', 'Y', 'N'];
+    $dropLabelPrefix = ['К сравнению', 'В избранное', 'В корзине', 'Заказать'];
+    foreach ($pairs as $label => $value) {
+        if (in_array($label, $dropLabels, true)) {
+            unset($pairs[$label]);
+            continue;
+        }
+        foreach ($dropLabelPrefix as $prefix) {
+            if (stripos($label, $prefix) === 0) {
+                unset($pairs[$label]);
+                break;
+            }
+        }
+        if (strlen($label) <= 2 && preg_match('/^[yn]$/ui', $label)) {
+            unset($pairs[$label]);
+        }
+        if ($label === 'Характеристики' && preg_match('/^[A-Za-z]+\s+[A-Z0-9\-\/]+$/u', trim($value))) {
+            unset($pairs[$label]);
+        }
+        if ($label === 'Описание' && strlen($value) < 100 && preg_match('/^[A-Za-z0-9\s\-\/]+$/u', trim($value))) {
+            unset($pairs[$label]);
+        }
+        if (preg_match('/автомобильн|акустик/ui', $value)) {
+            unset($pairs[$label]);
+        }
+    }
+    return $pairs;
 }
 
 /**
@@ -417,6 +477,7 @@ function parseMarket777($html, $url) {
     if (empty($pairs)) {
         $pairs = extractAllCharacteristicsFromHtml($html);
     }
+    $pairs = filterMarket777Pairs($pairs);
     $characteristics = mapToSchema($pairs);
 
     $brand = '';

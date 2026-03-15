@@ -1,0 +1,13 @@
+# Данные каталога и загрузки (на сервере создаются вручную или админкой)
+data/products.json
+img/products/*
+!img/products/.gitkeep
+
+# Системные и редакторы
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.log

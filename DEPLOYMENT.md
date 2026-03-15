@@ -37,10 +37,26 @@ sudo chown -R www-data:www-data skandata.ru
 scp -r * user@your-server-ip:/var/www/skandata.ru/
 ```
 
-#### Способ B: Через Git (если проект в репозитории)
+#### Способ B: Через Git (рекомендуется — потом обновление в одну команду)
+Подставьте свой репозиторий и путь к сайту (например, для Lion Climate — `/var/www/lionclimate.ru`):
+
 ```bash
-cd /var/www/skandata.ru
-sudo git clone https://your-repo-url.git .
+cd /var/www
+sudo mkdir -p lionclimate.ru
+sudo chown $USER:$USER lionclimate.ru
+cd lionclimate.ru
+git clone https://github.com/skandal1st/lionclimate.git .
+```
+
+После клонирования создайте каталоги и файлы, которых нет в репозитории (данные и загрузки не коммитятся):
+
+```bash
+mkdir -p data img/products
+touch data/products.json
+echo '[]' > data/products.json
+chmod -R 755 data img
+# Если веб-сервер работает от www-data:
+sudo chown -R www-data:www-data data img/products
 ```
 
 #### Способ C: Через SFTP (FileZilla, WinSCP и т.д.)
@@ -226,6 +242,76 @@ sudo certbot --apache -d skandata.ru -d www.skandata.ru
 sudo chmod -R 755 /var/www/skandata.ru
 sudo chown -R www-data:www-data /var/www/skandata.ru
 ```
+
+## Подключение существующей папки к репозиторию (без полного клонирования)
+
+Если сайт уже лежит на сервере (залит по SCP/SFTP) и вы хотите лишь подключить эту папку к GitHub, чтобы потом обновлять через `git pull`:
+
+```bash
+cd /var/www/lionclimate.ru
+
+# Инициализировать репозиторий в текущей папке
+git init
+
+# Подключить удалённый репозиторий
+git remote add origin https://github.com/skandal1st/lionclimate.git
+
+# Скачать только объекты Git (без перезаписи ваших файлов пока)
+git fetch origin
+
+# Взять ветку main из репозитория (файлы кода подтянутся с GitHub)
+git checkout -b main origin/main
+```
+
+Если Git сообщит, что в папке есть неотслеживаемые файлы и не переключится, приведите каталог к виду репозитория принудительно:
+
+```bash
+git reset --hard origin/main
+```
+
+После этого код на сервере будет совпадать с репозиторием. Файлы `data/products.json` и `img/products/*` в репозитории не хранятся (они в `.gitignore`), поэтому **не удалятся** и останутся на месте. Дальше обновление — только `git pull origin main`.
+
+## Обновление проекта на сервере
+
+Если сайт развёрнут через Git (способ B выше или папка подключена как в предыдущем разделе), обновлять файлы можно без перезаливки по SCP/SFTP.
+
+### Одной командой
+
+Подключитесь по SSH и выполните в каталоге сайта:
+
+```bash
+cd /var/www/lionclimate.ru
+git pull origin main
+```
+
+Обновятся только изменённые файлы из репозитория. Каталоги `data/` и `img/products/` в репозитории не хранятся (см. `.gitignore`), поэтому товары и загруженные фото не затронутся.
+
+### Скрипт обновления (по желанию)
+
+На сервере в корне сайта можно положить скрипт `update.sh` и вызывать его после правок в репозитории:
+
+```bash
+cd /var/www/lionclimate.ru
+./update.sh
+```
+
+Скрипт делает `git pull` и при необходимости поправляет права на `data/` и `img/products/`. Создать его можно так (один раз):
+
+```bash
+cd /var/www/lionclimate.ru
+cat > update.sh << 'EOF'
+#!/bin/bash
+set -e
+cd "$(dirname "$0")"
+git pull origin main
+# Права для веб-сервера (замените www-data на пользователя nginx/apache при необходимости)
+sudo chown -R www-data:www-data data img/products 2>/dev/null || true
+echo "Готово."
+EOF
+chmod +x update.sh
+```
+
+Дальше после каждого пуша в GitHub достаточно зайти на сервер и выполнить `./update.sh`.
 
 ## Проверка работы сайта
 
