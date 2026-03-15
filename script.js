@@ -78,9 +78,23 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function closeModal(modal) {
+        if (!modal) return;
         modal.classList.remove('show');
-        modalOverlay.classList.remove('show');
+        if (modalOverlay) modalOverlay.classList.remove('show');
         document.body.style.overflow = '';
+    }
+
+    // Открыть модалку «Оставить заявку» при переходе по ссылке с хешем (с каталога/карточки товара)
+    if (document.getElementById('contactModal') && (window.location.hash === '#contactModal' || window.location.hash === '#contact')) {
+        var modal = document.getElementById('contactModal');
+        if (modal && modalOverlay) {
+            modal.classList.add('show');
+            modalOverlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        if (window.history.replaceState) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
     }
     
     // Мобильное меню
