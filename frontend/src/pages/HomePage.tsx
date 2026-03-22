@@ -1,28 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
-import { submitLead } from '../api';
-
-function useBodyScrollLock(locked: boolean) {
-  useEffect(() => {
-    if (locked) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [locked]);
-}
+import { useContactModals } from '../context/ContactModalContext';
 
 export default function HomePage() {
+  const { openContact, openConsult } = useContactModals();
   const [cookieBanner, setCookieBanner] = useState(false);
-  const [contactOpen, setContactOpen] = useState(false);
-  const [consultOpen, setConsultOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  useBodyScrollLock(contactOpen || consultOpen);
 
   useEffect(() => {
     if (!localStorage.getItem('cookieConsent')) {
@@ -30,103 +13,6 @@ export default function HomePage() {
       return () => clearTimeout(t);
     }
   }, []);
-
-  const openFromHash = useCallback(() => {
-    const h = window.location.hash;
-    if (h === '#contactModal' || h === '#contact') {
-      setContactOpen(true);
-      setConsultOpen(false);
-      if (window.history.replaceState) {
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      }
-    }
-  }, []);
-
-  const closeModals = useCallback(() => {
-    setContactOpen(false);
-    setConsultOpen(false);
-  }, []);
-
-  useEffect(() => {
-    openFromHash();
-    window.addEventListener('hashchange', openFromHash);
-    return () => window.removeEventListener('hashchange', openFromHash);
-  }, [openFromHash]);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') closeModals();
-    }
-    if (contactOpen || consultOpen) {
-      window.addEventListener('keydown', onKey);
-    }
-    return () => window.removeEventListener('keydown', onKey);
-  }, [contactOpen, consultOpen, closeModals]);
-
-  async function handleContactSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const name = String(fd.get('name') || '').trim();
-    const phone = String(fd.get('phone') || '').trim();
-    const consent = fd.get('consent');
-    if (!name || !phone) {
-      alert('Пожалуйста, заполните все обязательные поля');
-      return;
-    }
-    if (!consent) {
-      alert('Необходимо согласие на обработку персональных данных');
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await submitLead({
-        name,
-        phone,
-        service: String(fd.get('service') || ''),
-        message: String(fd.get('message') || ''),
-        formType: 'contact',
-      });
-      alert('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
-      closeModals();
-      e.currentTarget.reset();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Ошибка отправки');
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function handleConsultSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const name = String(fd.get('name') || '').trim();
-    const phone = String(fd.get('phone') || '').trim();
-    const consent = fd.get('consent');
-    if (!name || !phone) {
-      alert('Пожалуйста, заполните все обязательные поля');
-      return;
-    }
-    if (!consent) {
-      alert('Необходимо согласие на обработку персональных данных');
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await submitLead({
-        name,
-        phone,
-        message: String(fd.get('message') || ''),
-        formType: 'consultation',
-      });
-      alert('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
-      closeModals();
-      e.currentTarget.reset();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Ошибка отправки');
-    } finally {
-      setSubmitting(false);
-    }
-  }
 
   return (
     <>
@@ -177,10 +63,10 @@ export default function HomePage() {
               профессиональная установка и обслуживание с гарантией качества 1.5 года. Работаем во всех районах МО.
             </p>
             <div className="hero-buttons">
-              <button type="button" className="btn-primary btn-large" onClick={() => setContactOpen(true)}>
+              <button type="button" className="btn-primary btn-large" onClick={openContact}>
                 Купить кондиционер
               </button>
-              <button type="button" className="btn-secondary btn-large" onClick={() => setConsultOpen(true)}>
+              <button type="button" className="btn-secondary btn-large" onClick={openConsult}>
                 Узнать цены
               </button>
             </div>
@@ -225,7 +111,7 @@ export default function HomePage() {
                 </div>
                 <h3>{s.title}</h3>
                 <p>{s.text}</p>
-                <button type="button" className="btn-link" onClick={() => setContactOpen(true)}>
+                <button type="button" className="btn-link" onClick={openContact}>
                   Заказать
                 </button>
               </div>
@@ -241,7 +127,7 @@ export default function HomePage() {
               </div>
               <h3>Обслуживание кондиционеров в Москве</h3>
               <p>Комплексное обслуживание и профилактика кондиционеров в Москве и МО для поддержания работы системы</p>
-              <button type="button" className="btn-link" onClick={() => setContactOpen(true)}>
+              <button type="button" className="btn-link" onClick={openContact}>
                 Заказать
               </button>
             </div>
@@ -354,7 +240,7 @@ export default function HomePage() {
             ))}
           </div>
           <div className="brands-info">
-            <button type="button" className="btn-primary btn-large" onClick={() => setContactOpen(true)}>
+            <button type="button" className="btn-primary btn-large" onClick={openContact}>
               Узнать цены и купить
             </button>
           </div>
@@ -413,7 +299,7 @@ export default function HomePage() {
               <span className="cta-title-line">понимания потребностей, технических требований и того, как</span>
               <span className="cta-title-line cta-title-accent">пространство поддерживает комфорт.</span>
             </h2>
-            <button type="button" className="btn-primary btn-large" onClick={() => setContactOpen(true)}>
+            <button type="button" className="btn-primary btn-large" onClick={openContact}>
               Связаться
             </button>
           </div>
@@ -440,7 +326,7 @@ export default function HomePage() {
                 </a>
               </p>
             </div>
-            <button type="button" className="btn-primary btn-large" onClick={() => setContactOpen(true)}>
+            <button type="button" className="btn-primary btn-large" onClick={openContact}>
               Оставить заявку
             </button>
           </div>
@@ -448,91 +334,6 @@ export default function HomePage() {
       </section>
 
       <PublicFooter />
-
-      <div id="contactModal" className={`modal${contactOpen ? ' show' : ''}`}>
-        <div className="modal-content">
-          <button type="button" className="modal-close" aria-label="Закрыть" onClick={closeModals}>
-            &times;
-          </button>
-          <h2>Оставить заявку</h2>
-          <form className="contact-form" onSubmit={handleContactSubmit}>
-            <div className="form-group">
-              <label htmlFor="name">Ваше имя *</label>
-              <input type="text" id="name" name="name" required />
-            </div>
-            <div className="form-group">
-              <label htmlFor="phone">Телефон *</label>
-              <input type="tel" id="phone" name="phone" required placeholder="+7 (999) 123-45-67" />
-            </div>
-            <div className="form-group">
-              <label htmlFor="service">Услуга</label>
-              <select id="service" name="service" defaultValue="">
-                <option value="">Выберите услугу</option>
-                <option value="Продажа кондиционеров (розница)">Продажа кондиционеров (розница)</option>
-                <option value="Продажа кондиционеров (опт)">Продажа кондиционеров (опт)</option>
-                <option value="Установка кондиционера">Установка кондиционера</option>
-                <option value="Монтаж кондиционера">Монтаж кондиционера</option>
-                <option value="Чистка кондиционеров">Чистка кондиционеров</option>
-                <option value="Заправка фреоном">Заправка фреоном</option>
-                <option value="Обслуживание кондиционеров">Обслуживание кондиционеров</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label htmlFor="message">Сообщение</label>
-              <textarea id="message" name="message" rows={4} />
-            </div>
-            <div className="form-group checkbox-group">
-              <label className="checkbox-label">
-                <input type="checkbox" id="consent" name="consent" required />
-                <span>Я согласен на обработку персональных данных *</span>
-              </label>
-            </div>
-            <button type="submit" className="btn-primary btn-full" disabled={submitting}>
-              {submitting ? 'Отправка...' : 'Отправить заявку'}
-            </button>
-          </form>
-        </div>
-      </div>
-
-      <div id="consultationModal" className={`modal${consultOpen ? ' show' : ''}`}>
-        <div className="modal-content">
-          <button type="button" className="modal-close" aria-label="Закрыть" onClick={closeModals}>
-            &times;
-          </button>
-          <h2>Бесплатная консультация</h2>
-          <form className="contact-form" onSubmit={handleConsultSubmit}>
-            <div className="form-group">
-              <label htmlFor="consultName">Ваше имя *</label>
-              <input type="text" id="consultName" name="name" required />
-            </div>
-            <div className="form-group">
-              <label htmlFor="consultPhone">Телефон *</label>
-              <input type="tel" id="consultPhone" name="phone" required placeholder="+7 (999) 123-45-67" />
-            </div>
-            <div className="form-group">
-              <label htmlFor="consultMessage">Ваш вопрос</label>
-              <textarea id="consultMessage" name="message" rows={4} placeholder="Опишите ваш вопрос или задачу" />
-            </div>
-            <div className="form-group checkbox-group">
-              <label className="checkbox-label">
-                <input type="checkbox" id="consultConsent" name="consent" required />
-                <span>Я согласен на обработку персональных данных *</span>
-              </label>
-            </div>
-            <button type="submit" className="btn-primary btn-full" disabled={submitting}>
-              {submitting ? 'Отправка...' : 'Заказать консультацию'}
-            </button>
-          </form>
-        </div>
-      </div>
-
-      <div
-        id="modalOverlay"
-        className={`modal-overlay${contactOpen || consultOpen ? ' show' : ''}`}
-        onClick={closeModals}
-        onKeyDown={(e) => e.key === 'Escape' && closeModals()}
-        role="presentation"
-      />
     </>
   );
 }

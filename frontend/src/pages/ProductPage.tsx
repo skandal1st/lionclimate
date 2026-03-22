@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
+import { useContactModals } from '../context/ContactModalContext';
 import type { Product } from '../types';
 
 export default function ProductPage() {
+  const { openContact } = useContactModals();
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null | undefined>(undefined);
   const [notFound, setNotFound] = useState(false);
@@ -85,9 +87,9 @@ export default function ProductPage() {
                     <div className="product-card-price">Цена по запросу</div>
                   )}
                   <div className="product-card-actions">
-                    <a href="/#contactModal" className="btn-primary product-card-btn">
+                    <button type="button" className="btn-primary product-card-btn" onClick={openContact}>
                       Узнать цену / Заказать
-                    </a>
+                    </button>
                     <a href="tel:+79688234573" className="btn-secondary product-card-btn">
                       Позвонить
                     </a>

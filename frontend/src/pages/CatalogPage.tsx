@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
+import { useContactModals } from '../context/ContactModalContext';
 import type { Product } from '../types';
 
 export default function CatalogPage() {
+  const { openContact } = useContactModals();
   const [products, setProducts] = useState<Product[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -82,9 +84,9 @@ export default function CatalogPage() {
                       <Link to={productUrl} className="btn-secondary catalog-card-btn catalog-card-btn-view">
                         Подробнее
                       </Link>
-                      <a href="/#contactModal" className="btn-primary catalog-card-btn">
+                      <button type="button" className="btn-primary catalog-card-btn" onClick={openContact}>
                         Узнать цену / Заказать
-                      </a>
+                      </button>
                     </div>
                   </div>
                 );

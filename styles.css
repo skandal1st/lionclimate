@@ -116,7 +116,7 @@ body {
 .nav-wrapper {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 30px;
     flex-wrap: wrap;
 }
@@ -143,6 +143,8 @@ body {
     gap: 30px;
     align-items: center;
     flex-wrap: wrap;
+    margin-left: auto;
+    justify-content: flex-end;
 }
 
 .nav-menu li {
@@ -178,8 +180,9 @@ body {
 .nav-contact {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 8px;
+    flex-shrink: 0;
 }
 
 .nav-phone {
@@ -1217,6 +1220,8 @@ body {
         visibility: hidden;
         transition: var(--transition);
         gap: 20px;
+        margin-left: 0;
+        justify-content: flex-start;
     }
 
     .nav-menu.active {
