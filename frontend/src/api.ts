@@ -1,5 +1,14 @@
 const TOKEN_KEY = 'lionclimate_admin_token';
 
+/** Пусто = тот же origin (`/api/...`). Иначе полный URL бэкенда, например `https://lionclimate.ru` (без слэша в конце). */
+const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, '') ?? '';
+
+export function apiUrl(path: string): string {
+  const p = path.startsWith('/') ? path : `/${path}`;
+  if (!API_BASE) return p;
+  return `${API_BASE}${p}`;
+}
+
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -21,11 +30,11 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
   if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  return fetch(path, { ...init, headers });
+  return fetch(apiUrl(path), { ...init, headers });
 }
 
 export async function login(password: string): Promise<string> {
-  const r = await fetch('/api/auth/login', {
+  const r = await fetch(apiUrl('/api/auth/login'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password }),
@@ -53,12 +62,15 @@ function parseJsonResponse(raw: string): { success?: boolean; id?: number; error
   try {
     return JSON.parse(raw) as { success?: boolean; id?: number; error?: string };
   } catch {
-    const hint =
-      raw.trimStart().startsWith('<!') || raw.trimStart().startsWith('<html')
-        ? ' Сервер вернул HTML вместо JSON: обычно это значит, что запрос не дошёл до Node API (статика/nginx отдала страницу) или API не запущен на порту 3001.'
-        : '';
+    const looksHtml = /^\s*</.test(raw);
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn(
+        '[lionclimate] Ответ не JSON (часто HTML от nginx или index.html). Проверка: curl -sS https://ВАШ_ДОМЕН/api/health и curl -sS http://127.0.0.1:3001/api/health; systemctl status lionclimate-api; в nginx блок location ^~ /api/ с proxy_pass на порт 3001.',
+        looksHtml ? { preview: raw.slice(0, 160) } : undefined
+      );
+    }
     throw new Error(
-      `Ответ сервера не JSON.${hint} Проверьте: на проде — systemctl status lionclimate-api и location /api/ в nginx; локально — запущен ли server и прокси в vite (npm run dev / preview с Node на 3001).`
+      'Не удалось отправить заявку. Попробуйте позже или позвоните: +7 968 823 45 73'
     );
   }
 }
@@ -71,7 +83,7 @@ export async function submitLead(payload: {
   formType: 'contact' | 'consultation';
   source?: string;
 }): Promise<{ success: boolean; id?: number }> {
-  const r = await fetch('/api/leads', {
+  const r = await fetch(apiUrl('/api/leads'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

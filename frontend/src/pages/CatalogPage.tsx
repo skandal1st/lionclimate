@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
 import { useContactModals } from '../context/ContactModalContext';
+import { apiUrl } from '../api';
 import type { Product } from '../types';
 
 export default function CatalogPage() {
@@ -11,7 +12,7 @@ export default function CatalogPage() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch('/api/products')
+    fetch(apiUrl('/api/products'))
       .then((r) => r.json())
       .then((data) => {
         setProducts(Array.isArray(data) ? data : []);

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
 import { useContactModals } from '../context/ContactModalContext';
+import { apiUrl } from '../api';
 import type { Product } from '../types';
 
 export default function ProductPage() {
@@ -17,7 +18,7 @@ export default function ProductPage() {
       setProduct(null);
       return;
     }
-    fetch(`/api/products/${encodeURIComponent(id)}`)
+    fetch(apiUrl(`/api/products/${encodeURIComponent(id)}`))
       .then((r) => {
         if (!r.ok) throw new Error('not found');
         return r.json();
