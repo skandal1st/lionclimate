@@ -5,6 +5,12 @@ import type { CharSchemaItem, Product } from '../../types';
 
 const emptyChars: Record<string, string> = {};
 
+function publicImageUrl(path: string): string {
+  if (!path) return '';
+  if (/^https?:\/\//i.test(path)) return path;
+  return path.startsWith('/') ? path : `/${path}`;
+}
+
 export default function AdminProductEdit() {
   const { id } = useParams<{ id: string }>();
   const isNew = !id || id === 'new';
@@ -19,6 +25,10 @@ export default function AdminProductEdit() {
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  /** Текущий путь/URL с сервера (после сохранения или при загрузке) */
+  const [storedImage, setStoredImage] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [supplierUrl, setSupplierUrl] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [chars, setChars] = useState<Record<string, string>>(emptyChars);
@@ -48,7 +58,9 @@ export default function AdminProductEdit() {
         setPrice(p.price != null ? String(p.price) : '');
         setDescription(p.description || '');
         const img = p.image || '';
+        setStoredImage(img || null);
         setImageUrl(/^https?:\/\//i.test(img) ? img : '');
+        setPendingFile(null);
         setSupplierUrl(p.supplier_url || '');
         setIsActive(p.is_active !== false);
         const map: Record<string, string> = {};
@@ -63,6 +75,16 @@ export default function AdminProductEdit() {
       })
       .finally(() => setLoading(false));
   }, [id, isNew, navigate]);
+
+  useEffect(() => {
+    if (!pendingFile) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(pendingFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [pendingFile]);
 
   function setChar(key: string, value: string) {
     setChars((prev) => ({ ...prev, [key]: value }));
@@ -80,30 +102,66 @@ export default function AdminProductEdit() {
       for (const [k, v] of Object.entries(chars)) {
         if (String(v).trim()) characteristics[k] = String(v).trim();
       }
-      const body: Record<string, unknown> = {
+      const basePayload: Record<string, unknown> = {
         name: name.trim(),
         brand: brand.trim(),
         model: model.trim(),
         price: price === '' ? null : Number(price),
         description: description.trim(),
-        image_url: imageUrl.trim(),
+        image_url: pendingFile ? '' : imageUrl.trim(),
         supplier_url: supplierUrl.trim(),
         is_active: isActive,
         characteristics,
       };
-      if (!isNew) {
+
+      const useMultipart = !!pendingFile;
+
+      if (useMultipart) {
+        const fd = new FormData();
+        fd.append('data', JSON.stringify(basePayload));
+        fd.append('image', pendingFile);
+        if (!isNew) {
+          const r = await apiFetch(`/api/admin/products/${encodeURIComponent(id!)}`, {
+            method: 'PUT',
+            body: fd,
+          });
+          if (!r.ok) throw new Error();
+          const updated = (await r.json()) as Product;
+          setStoredImage(updated.image || null);
+          setPendingFile(null);
+          if (updated.image && /^https?:\/\//i.test(updated.image)) {
+            setImageUrl(updated.image);
+          } else if (updated.image) {
+            setImageUrl('');
+          }
+        } else {
+          const r = await apiFetch('/api/admin/products', {
+            method: 'POST',
+            body: fd,
+          });
+          if (!r.ok) throw new Error();
+          const created = (await r.json()) as Product;
+          navigate(`/admin/products/${encodeURIComponent(created.id)}`, { replace: true });
+          return;
+        }
+      } else if (!isNew) {
         const r = await apiFetch(`/api/admin/products/json/${encodeURIComponent(id!)}`, {
           method: 'PUT',
-          body: JSON.stringify(body),
+          body: JSON.stringify(basePayload),
         });
         if (!r.ok) throw new Error();
+        const updated = (await r.json()) as Product;
+        setStoredImage(updated.image || null);
+        if (updated.image && /^https?:\/\//i.test(updated.image)) {
+          setImageUrl(updated.image);
+        }
       } else {
         const r = await apiFetch('/api/admin/products/json', {
           method: 'POST',
-          body: JSON.stringify(body),
+          body: JSON.stringify(basePayload),
         });
         if (!r.ok) throw new Error();
-        const created = await r.json();
+        const created = (await r.json()) as Product;
         navigate(`/admin/products/${encodeURIComponent(created.id)}`, { replace: true });
         return;
       }
@@ -152,8 +210,52 @@ export default function AdminProductEdit() {
           <textarea id="p-desc" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
         <div className="admin-form-group">
-          <label htmlFor="p-img-url">URL изображения</label>
-          <input id="p-img-url" type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
+          <label>Фото товара (файл)</label>
+          <div className="admin-product-image-row">
+            <div className="admin-product-image-preview">
+              {(previewUrl || (storedImage ? publicImageUrl(storedImage) : '') || imageUrl) ? (
+                <img
+                  src={previewUrl || publicImageUrl(storedImage || '') || imageUrl}
+                  alt=""
+                  style={{ maxHeight: 200, maxWidth: '100%', objectFit: 'contain', borderRadius: 8, border: '1px solid #263041' }}
+                />
+              ) : (
+                <span style={{ color: '#8a9', fontSize: 14 }}>Превью появится после выбора файла или URL</span>
+              )}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                onChange={(e) => setPendingFile(e.target.files?.[0] ?? null)}
+              />
+              {pendingFile && (
+                <button
+                  type="button"
+                  className="admin-btn admin-btn-secondary"
+                  style={{ alignSelf: 'flex-start' }}
+                  onClick={() => setPendingFile(null)}
+                >
+                  Отменить выбор файла
+                </button>
+              )}
+              <span style={{ fontSize: 12, color: '#8a9' }}>
+                JPG, PNG, GIF, WebP, до ~8 МБ. Файл сохранится в <code>img/products/</code> на сервере.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="admin-form-group">
+          <label htmlFor="p-img-url">Или URL изображения (внешняя ссылка)</label>
+          <input
+            id="p-img-url"
+            type="url"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://..."
+            disabled={!!pendingFile}
+          />
+          {pendingFile && <span style={{ fontSize: 12, color: '#f5d76e' }}>При сохранении будет использован загруженный файл, не URL.</span>}
         </div>
         <div className="admin-form-group">
           <label>

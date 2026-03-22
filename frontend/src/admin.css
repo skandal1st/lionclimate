@@ -328,3 +328,22 @@
   min-width: 2rem;
 }
 
+.admin-product-image-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.admin-product-image-preview {
+  min-height: 72px;
+  min-width: 120px;
+  max-width: 360px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f1419;
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
