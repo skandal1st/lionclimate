@@ -81,3 +81,16 @@ location /img/ {
 
 - Сгенерируйте сильный `JWT_SECRET` и храните пароль админки как bcrypt (`ADMIN_PASSWORD_HASH`), не коммитьте `.env`.
 - Ротируйте токен Telegram, если он ранее попадал в репозиторий.
+
+### npm: предупреждения и `npm audit`
+
+После `npm install` часто появляются **deprecated** для транзитивных пакетов (`glob`, `rimraf`, `tar`, `gauge` и т.д.) — их тянут нативные модули вроде **bcrypt** и **better-sqlite3**. Это не ошибка установки: пока нет обновления у этих пакетов, предупреждения можно игнорировать.
+
+Сообщение **«2 high severity vulnerabilities»** чаще всего было связано со **старым Multer 1.x** (исправлено в зависимостях проекта: `multer@^2`). На сервере после `git pull` выполните:
+
+```bash
+cd server && rm -rf node_modules package-lock.json && npm install
+npm audit
+```
+
+При необходимости: `npm audit fix` (без `--force`, если не уверены в breaking changes). Если что-то останется — смотрите детали: `npm audit --json` или отчёт по конкретному пакету; часть уязвимостей может относиться только к **devDependencies** или к инструментам сборки, не к рантайму API.
