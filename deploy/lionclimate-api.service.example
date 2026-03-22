@@ -18,6 +18,10 @@ WorkingDirectory=/var/www/lionclimate.ru/server
 ExecStart=/usr/bin/node /var/www/lionclimate.ru/server/src/index.js
 Restart=on-failure
 RestartSec=3
+#
+# Один раз после деплоя (права на SQLite для www-data):
+#   sudo chown -R www-data:www-data /var/www/lionclimate.ru/server/data
+# Проверка: curl -s http://127.0.0.1:3001/api/health  →  "dbWritable":true
 
 [Install]
 WantedBy=multi-user.target

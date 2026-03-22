@@ -86,6 +86,17 @@ sudo -u www-data bash -c 'cd /var/www/lionclimate.ru/server && /usr/bin/node src
 
 3. Частые причины: неверный `ExecStart` (нет файла `index.js` или не тот путь к сайту); неверный путь к `node`; отсутствует `server/.env` (без `JWT_SECRET` приложение может упасть при старте); нет прав у `www-data` на каталог/файлы; порт `PORT` уже занят другим процессом.
 
+### Права на SQLite (`attempt to write a readonly database`)
+
+API работает от пользователя **`www-data`**. Каталог с БД (по умолчанию `server/data/`) и файл `lionclimate.db` должны принадлежать ему и быть доступны на запись (в режиме WAL SQLite создаёт рядом служебные файлы).
+
+```bash
+sudo chown -R www-data:www-data /var/www/lionclimate.ru/server/data
+sudo systemctl restart lionclimate-api
+```
+
+Проверка: `curl -s http://127.0.0.1:3001/api/health` — в JSON должно быть `"dbWritable":true`. Если `false` — исправьте владельца/права на каталог из `DATABASE_PATH` в `server/.env`.
+
 ### nginx
 
 **Если `curl https://lionclimate.ru/api/health` отдаёт HTML с «404 Not Found» от nginx** — в конфиге **нет** прокси на Node для `/api/`, или блок попал не в тот `server { }` (другой виртуальный хост).

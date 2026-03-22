@@ -20,6 +20,29 @@ if (!fs.existsSync(dir)) {
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
+export function getDbPath() {
+  return dbPath;
+}
+
+/** Проверка прав на каталог и файл БД (процесс systemd обычно www-data). */
+export function isDatabaseWritable() {
+  try {
+    fs.accessSync(dir, fs.constants.W_OK);
+    if (fs.existsSync(dbPath)) {
+      fs.accessSync(dbPath, fs.constants.W_OK);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+if (!isDatabaseWritable()) {
+  console.warn(
+    `[lionclimate-db] Нет прав на запись в ${dbPath}. Исправление: sudo chown -R www-data:www-data ${dir} && sudo systemctl restart lionclimate-api`
+  );
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS leads (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -4,7 +4,7 @@ import express from 'express';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
-import db from './db.js';
+import db, { isDatabaseWritable } from './db.js';
 import { isAdminAuthConfigured, signToken, verifyAdminPassword } from './auth.js';
 import { requireAuth } from './middleware/auth.js';
 import { sendLeadToTelegram } from './telegram.js';
@@ -21,6 +21,9 @@ import fs from 'fs';
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
 
+// За nginx клиентский IP приходит в X-Forwarded-For; иначе rate limit и req.ip — всегда 127.0.0.1
+app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);
+
 const corsOrigin = process.env.CORS_ORIGIN || '*';
 app.use(
   cors({
@@ -35,38 +38,57 @@ const leadsLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      error: 'Слишком много заявок с этого адреса. Попробуйте через несколько минут.',
+    });
+  },
 });
 
 // --- Public: submit lead ---
 app.post('/api/leads', leadsLimiter, (req, res) => {
-  const body = req.body || {};
-  const name = String(body.name ?? '').trim();
-  const phone = String(body.phone ?? '').trim();
-  const service = String(body.service ?? '').trim() || null;
-  const message = String(body.message ?? '').trim() || null;
-  const formType = body.formType === 'consultation' ? 'consultation' : 'contact';
-  const source = body.source ? String(body.source).slice(0, 500) : null;
+  try {
+    const body = req.body || {};
+    const name = String(body.name ?? '').trim();
+    const phone = String(body.phone ?? '').trim();
+    const service = String(body.service ?? '').trim() || null;
+    const message = String(body.message ?? '').trim() || null;
+    const formType = body.formType === 'consultation' ? 'consultation' : 'contact';
+    const source = body.source ? String(body.source).slice(0, 500) : null;
 
-  if (!name || !phone) {
-    return res.status(400).json({ success: false, error: 'Name and phone are required' });
+    if (!name || !phone) {
+      return res.status(400).json({ success: false, error: 'Укажите имя и телефон' });
+    }
+
+    const createdAt = new Date().toISOString();
+    const stmt = db.prepare(`
+      INSERT INTO leads (created_at, name, phone, service, message, form_type, status, notes, source)
+      VALUES (?, ?, ?, ?, ?, ?, 'new', NULL, ?)
+    `);
+    const info = stmt.run(createdAt, name, phone, service, message, formType, source);
+    const id = info.lastInsertRowid;
+
+    setImmediate(() => {
+      sendLeadToTelegram(
+        { name, phone, service: service || 'Не указано', message: message || 'Не указано', formType },
+        process.env
+      ).catch((e) => console.error('[telegram]', e));
+    });
+
+    return res.json({ success: true, id });
+  } catch (e) {
+    console.error('[api/leads]', e);
+    const readonly =
+      (e && typeof e === 'object' && 'code' in e && e.code === 'SQLITE_READONLY') ||
+      /readonly/i.test(String(e && e.message));
+    return res.status(500).json({
+      success: false,
+      error: readonly
+        ? 'База данных на сервере только для чтения. Нужны права на каталог data/ (см. NODE_DEPLOY.md).'
+        : 'Не удалось сохранить заявку. Попробуйте позже или позвоните.',
+    });
   }
-
-  const createdAt = new Date().toISOString();
-  const stmt = db.prepare(`
-    INSERT INTO leads (created_at, name, phone, service, message, form_type, status, notes, source)
-    VALUES (?, ?, ?, ?, ?, ?, 'new', NULL, ?)
-  `);
-  const info = stmt.run(createdAt, name, phone, service, message, formType, source);
-  const id = info.lastInsertRowid;
-
-  setImmediate(() => {
-    sendLeadToTelegram(
-      { name, phone, service: service || 'Не указано', message: message || 'Не указано', formType },
-      process.env
-    );
-  });
-
-  res.json({ success: true, id });
 });
 
 // --- Auth ---
@@ -443,7 +465,27 @@ app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
     adminAuthConfigured: isAdminAuthConfigured(),
+    dbWritable: isDatabaseWritable(),
   });
+});
+
+app.use((err, req, res, next) => {
+  if (req.originalUrl?.startsWith('/api')) {
+    console.error('[api]', err);
+    if (res.headersSent) {
+      next(err);
+      return;
+    }
+    const readonly =
+      err && typeof err === 'object' && 'code' in err && err.code === 'SQLITE_READONLY';
+    return res.status(500).json({
+      success: false,
+      error: readonly
+        ? 'База данных только для чтения. Выполните: sudo chown -R www-data:www-data server/data'
+        : 'Внутренняя ошибка сервера',
+    });
+  }
+  next(err);
 });
 
 app.listen(PORT, () => {
