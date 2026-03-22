@@ -58,15 +58,20 @@ export function logout() {
   setToken(null);
 }
 
-function parseJsonResponse(raw: string): { success?: boolean; id?: number; error?: string } {
+function parseJsonResponse(
+  raw: string,
+  httpStatus?: number
+): { success?: boolean; id?: number; error?: string } {
   try {
     return JSON.parse(raw) as { success?: boolean; id?: number; error?: string };
   } catch {
     const looksHtml = /^\s*</.test(raw);
     if (typeof console !== 'undefined' && console.warn) {
       console.warn(
-        '[lionclimate] Ответ не JSON (часто HTML от nginx или index.html). Проверка: curl -sS https://ВАШ_ДОМЕН/api/health и curl -sS http://127.0.0.1:3001/api/health; systemctl status lionclimate-api; в nginx блок location ^~ /api/ с proxy_pass на порт 3001.',
-        looksHtml ? { preview: raw.slice(0, 160) } : undefined
+        '[lionclimate] Ответ не JSON (часто HTML: nginx/502 или index.html вместо API). HTTP status:',
+        httpStatus,
+        '— проверьте: curl -sS http://127.0.0.1:3001/api/health и через домен; systemctl restart lionclimate-api; nginx location ^~ /api/ → proxy_pass 127.0.0.1:3001',
+        looksHtml ? { preview: raw.slice(0, 200) } : undefined
       );
     }
     throw new Error(
@@ -85,11 +90,14 @@ export async function submitLead(payload: {
 }): Promise<{ success: boolean; id?: number }> {
   const r = await fetch(apiUrl('/api/leads'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
     body: JSON.stringify(payload),
   });
   const raw = await r.text();
-  const data = parseJsonResponse(raw);
+  const data = parseJsonResponse(raw, r.status);
   if (!r.ok) {
     throw new Error(data.error || 'Не удалось отправить заявку');
   }
