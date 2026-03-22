@@ -58,4 +58,24 @@ db.exec(`
   );
 `);
 
+const leadColNames = new Set(db.prepare('PRAGMA table_info(leads)').all().map((c) => c.name));
+function addLeadColumn(name, sqlType) {
+  if (!leadColNames.has(name)) {
+    db.exec(`ALTER TABLE leads ADD COLUMN ${name} ${sqlType}`);
+    leadColNames.add(name);
+  }
+}
+addLeadColumn('deal_address', 'TEXT');
+addLeadColumn('deal_ac_model', 'TEXT');
+addLeadColumn('deal_extra', 'TEXT');
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS crm_custom_fields (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    field_key TEXT NOT NULL UNIQUE,
+    label TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0
+  );
+`);
+
 export default db;

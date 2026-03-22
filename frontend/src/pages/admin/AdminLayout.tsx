@@ -16,6 +16,9 @@ export default function AdminLayout() {
             <NavLink to="/admin/leads" className={({ isActive }) => (isActive ? 'active' : '')}>
               Заявки
             </NavLink>
+            <NavLink to="/admin/crm-fields" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Поля сделки
+            </NavLink>
           </nav>
           <button
             type="button"

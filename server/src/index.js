@@ -5,6 +5,21 @@ import path from 'path';
 import rateLimit from 'express-rate-limit';
 
 import db, { isDatabaseWritable } from './db.js';
+
+function serializeLead(row) {
+  if (!row) return row;
+  const o = { ...row };
+  if (o.deal_extra == null || o.deal_extra === '') {
+    o.deal_extra = {};
+  } else if (typeof o.deal_extra === 'string') {
+    try {
+      o.deal_extra = JSON.parse(o.deal_extra);
+    } catch {
+      o.deal_extra = {};
+    }
+  }
+  return o;
+}
 import { isAdminAuthConfigured, signToken, verifyAdminPassword } from './auth.js';
 import { requireAuth } from './middleware/auth.js';
 import { sendLeadToTelegram } from './telegram.js';
@@ -141,7 +156,7 @@ app.get('/api/admin/leads', requireAuth, (req, res) => {
   sql += ' ORDER BY datetime(created_at) DESC';
 
   const rows = db.prepare(sql).all(...params);
-  res.json(rows);
+  res.json(rows.map(serializeLead));
 });
 
 app.get('/api/admin/leads/:id', requireAuth, (req, res) => {
@@ -149,7 +164,7 @@ app.get('/api/admin/leads/:id', requireAuth, (req, res) => {
   if (!row) {
     return res.status(404).json({ error: 'Not found' });
   }
-  res.json(row);
+  res.json(serializeLead(row));
 });
 
 app.patch('/api/admin/leads/:id', requireAuth, (req, res) => {
@@ -158,22 +173,74 @@ app.patch('/api/admin/leads/:id', requireAuth, (req, res) => {
   if (!existing) {
     return res.status(404).json({ error: 'Not found' });
   }
-  const allowed = ['status', 'notes'];
+  const body = req.body || {};
+  const allowed = ['status', 'notes', 'deal_address', 'deal_ac_model', 'deal_extra'];
   const updates = [];
   const vals = [];
   for (const key of allowed) {
-    if (key in (req.body || {})) {
-      updates.push(`${key} = ?`);
-      vals.push(req.body[key] == null ? null : String(req.body[key]));
+    if (!(key in body)) continue;
+    updates.push(`${key} = ?`);
+    if (key === 'deal_extra') {
+      const v = body.deal_extra;
+      if (v == null) vals.push(null);
+      else if (typeof v === 'object') vals.push(JSON.stringify(v));
+      else vals.push(String(v));
+    } else {
+      vals.push(body[key] == null ? null : String(body[key]));
     }
   }
   if (updates.length === 0) {
-    return res.json(existing);
+    return res.json(serializeLead(existing));
   }
   vals.push(id);
   db.prepare(`UPDATE leads SET ${updates.join(', ')} WHERE id = ?`).run(...vals);
   const row = db.prepare('SELECT * FROM leads WHERE id = ?').get(id);
-  res.json(row);
+  res.json(serializeLead(row));
+});
+
+app.get('/api/admin/crm-fields', requireAuth, (req, res) => {
+  const rows = db
+    .prepare('SELECT id, field_key, label, sort_order FROM crm_custom_fields ORDER BY sort_order ASC, id ASC')
+    .all();
+  res.json(rows);
+});
+
+app.put('/api/admin/crm-fields', requireAuth, (req, res) => {
+  const fields = req.body?.fields;
+  if (!Array.isArray(fields)) {
+    return res.status(400).json({ error: 'fields must be an array' });
+  }
+  if (fields.length > 40) {
+    return res.status(400).json({ error: 'Too many fields' });
+  }
+  const keyRe = /^[a-zA-Z0-9_]{1,64}$/;
+  const normalized = [];
+  const seen = new Set();
+  for (let i = 0; i < fields.length; i++) {
+    const f = fields[i];
+    const fieldKey = String(f.field_key || '').trim();
+    const label = String(f.label || '').trim();
+    if (!keyRe.test(fieldKey) || !label) {
+      return res.status(400).json({ error: 'Invalid field_key or label' });
+    }
+    if (seen.has(fieldKey)) {
+      return res.status(400).json({ error: 'Duplicate field_key' });
+    }
+    seen.add(fieldKey);
+    normalized.push({ fieldKey, label, order: i });
+  }
+  const tx = db.transaction(() => {
+    db.prepare('DELETE FROM crm_custom_fields').run();
+    const ins = db.prepare('INSERT INTO crm_custom_fields (field_key, label, sort_order) VALUES (?, ?, ?)');
+    for (const n of normalized) {
+      ins.run(n.fieldKey, n.label, n.order);
+    }
+  });
+  tx();
+  const rows = db
+    .prepare('SELECT id, field_key, label, sort_order FROM crm_custom_fields ORDER BY sort_order ASC, id ASC')
+    .all();
+  res.json(rows);
 });
 
 // --- Public products (same behaviour as PHP api) ---

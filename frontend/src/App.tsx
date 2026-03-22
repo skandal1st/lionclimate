@@ -8,6 +8,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminProductEdit from './pages/admin/AdminProductEdit';
 import AdminLeads from './pages/admin/AdminLeads';
+import AdminCrmSettings from './pages/admin/AdminCrmSettings';
 import { getToken } from './api';
 
 function RequireAdmin({ children }: { children: ReactNode }) {
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="products/new" element={<AdminProductEdit />} />
         <Route path="products/:id" element={<AdminProductEdit />} />
         <Route path="leads" element={<AdminLeads />} />
+        <Route path="crm-fields" element={<AdminCrmSettings />} />
       </Route>
     </Routes>
   );

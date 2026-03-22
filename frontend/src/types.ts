@@ -11,6 +11,17 @@ export interface Lead {
   status: LeadStatus;
   notes: string | null;
   source: string | null;
+  deal_address?: string | null;
+  deal_ac_model?: string | null;
+  /** Значения доп. полей из настроек CRM (ключ = field_key) */
+  deal_extra?: Record<string, string> | null;
+}
+
+export interface CrmCustomField {
+  id: number;
+  field_key: string;
+  label: string;
+  sort_order: number;
 }
 
 export interface Product {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import DealCardModal from '../../components/admin/DealCardModal';
 import { apiFetch } from '../../api';
-import type { Lead, LeadStatus } from '../../types';
+import type { CrmCustomField, Lead, LeadStatus } from '../../types';
 
 const STATUSES: { value: LeadStatus; label: string }[] = [
   { value: 'new', label: 'Новая' },
@@ -15,6 +16,19 @@ export default function AdminLeads() {
   const [statusFilter, setStatusFilter] = useState('');
   const [formTypeFilter, setFormTypeFilter] = useState('');
   const [savingId, setSavingId] = useState<number | null>(null);
+  const [crmFields, setCrmFields] = useState<CrmCustomField[]>([]);
+  const [dealLead, setDealLead] = useState<Lead | null>(null);
+
+  async function loadCrmFields() {
+    try {
+      const r = await apiFetch('/api/admin/crm-fields');
+      if (!r.ok) throw new Error();
+      const data = await r.json();
+      setCrmFields(Array.isArray(data) ? data : []);
+    } catch {
+      setCrmFields([]);
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -37,6 +51,10 @@ export default function AdminLeads() {
     load();
   }, [statusFilter, formTypeFilter]);
 
+  useEffect(() => {
+    loadCrmFields();
+  }, []);
+
   async function patchLead(id: number, patch: Partial<Pick<Lead, 'status' | 'notes'>>) {
     setSavingId(id);
     try {
@@ -47,6 +65,7 @@ export default function AdminLeads() {
       if (!r.ok) throw new Error();
       const updated = await r.json();
       setLeads((prev) => prev.map((l) => (l.id === id ? updated : l)));
+      setDealLead((open) => (open && open.id === id ? updated : open));
     } catch {
       alert('Не удалось сохранить');
     } finally {
@@ -103,6 +122,7 @@ export default function AdminLeads() {
                 <th>Тип</th>
                 <th>Статус</th>
                 <th>Заметки</th>
+                <th>Сделка</th>
               </tr>
             </thead>
             <tbody>
@@ -111,7 +131,25 @@ export default function AdminLeads() {
                   <td style={{ whiteSpace: 'nowrap', fontSize: 13 }}>
                     {new Date(lead.created_at).toLocaleString('ru-RU')}
                   </td>
-                  <td>{lead.name}</td>
+                  <td>
+                    <button
+                      type="button"
+                      onClick={() => setDealLead(lead)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#8ab4f8',
+                        cursor: 'pointer',
+                        padding: 0,
+                        font: 'inherit',
+                        textAlign: 'left',
+                        textDecoration: 'underline',
+                        textUnderlineOffset: 2,
+                      }}
+                    >
+                      {lead.name}
+                    </button>
+                  </td>
                   <td>
                     <a href={`tel:${lead.phone}`} style={{ color: '#8ab4f8' }}>
                       {lead.phone}
@@ -138,12 +176,33 @@ export default function AdminLeads() {
                   <td style={{ minWidth: 200 }}>
                     <NotesCell lead={lead} disabled={savingId === lead.id} onSave={(notes) => patchLead(lead.id, { notes })} />
                   </td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-secondary"
+                      style={{ padding: '0.35rem 0.65rem', fontSize: 13 }}
+                      onClick={() => setDealLead(lead)}
+                    >
+                      Открыть
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
           {leads.length === 0 && <p style={{ padding: '1rem' }}>Заявок нет.</p>}
         </div>
+      )}
+
+      {dealLead && (
+        <DealCardModal
+          lead={dealLead}
+          crmFields={crmFields}
+          onClose={() => setDealLead(null)}
+          onSaved={(updated) => {
+            setLeads((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+          }}
+        />
       )}
     </div>
   );
