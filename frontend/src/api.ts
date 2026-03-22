@@ -49,6 +49,20 @@ export function logout() {
   setToken(null);
 }
 
+function parseJsonResponse(raw: string): { success?: boolean; id?: number; error?: string } {
+  try {
+    return JSON.parse(raw) as { success?: boolean; id?: number; error?: string };
+  } catch {
+    const hint =
+      raw.trimStart().startsWith('<!') || raw.trimStart().startsWith('<html')
+        ? ' Сервер вернул HTML вместо JSON: обычно это значит, что запрос не дошёл до Node API (статика/nginx отдала страницу) или API не запущен на порту 3001.'
+        : '';
+    throw new Error(
+      `Ответ сервера не JSON.${hint} Проверьте: на проде — systemctl status lionclimate-api и location /api/ в nginx; локально — запущен ли server и прокси в vite (npm run dev / preview с Node на 3001).`
+    );
+  }
+}
+
 export async function submitLead(payload: {
   name: string;
   phone: string;
@@ -62,7 +76,8 @@ export async function submitLead(payload: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  const data = (await r.json()) as { success?: boolean; id?: number; error?: string };
+  const raw = await r.text();
+  const data = parseJsonResponse(raw);
   if (!r.ok) {
     throw new Error(data.error || 'Не удалось отправить заявку');
   }
