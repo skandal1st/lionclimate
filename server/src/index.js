@@ -21,8 +21,9 @@ import fs from 'fs';
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
 
-// За nginx клиентский IP приходит в X-Forwarded-For; иначе rate limit и req.ip — всегда 127.0.0.1
-app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);
+// За nginx приходит X-Forwarded-For — обязательно, иначе express-rate-limit v7 падает с ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+const trustHops = Number.parseInt(process.env.TRUST_PROXY_HOPS ?? '1', 10);
+app.set('trust proxy', Number.isFinite(trustHops) && trustHops >= 0 ? trustHops : 1);
 
 const corsOrigin = process.env.CORS_ORIGIN || '*';
 app.use(
@@ -38,6 +39,8 @@ const leadsLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  // Дублируем защиту: при сбое trust proxy не валить запрос ValidationError
+  validate: { xForwardedForHeader: false },
   handler: (req, res) => {
     res.status(429).json({
       success: false,

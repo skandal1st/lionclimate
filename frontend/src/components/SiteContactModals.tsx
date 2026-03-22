@@ -33,7 +33,8 @@ export default function SiteContactModals({ contactOpen, consultOpen, onClose }:
 
   async function handleContactSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
     const name = String(fd.get('name') || '').trim();
     const phone = String(fd.get('phone') || '').trim();
     const consent = fd.get('consent');
@@ -55,8 +56,8 @@ export default function SiteContactModals({ contactOpen, consultOpen, onClose }:
         formType: 'contact',
       });
       alert('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
+      form.reset();
       onClose();
-      e.currentTarget.reset();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Ошибка отправки');
     } finally {
@@ -66,7 +67,8 @@ export default function SiteContactModals({ contactOpen, consultOpen, onClose }:
 
   async function handleConsultSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
     const name = String(fd.get('name') || '').trim();
     const phone = String(fd.get('phone') || '').trim();
     const consent = fd.get('consent');
@@ -87,8 +89,8 @@ export default function SiteContactModals({ contactOpen, consultOpen, onClose }:
         formType: 'consultation',
       });
       alert('Заявка отправлена! Мы свяжемся с вами в ближайшее время.');
+      form.reset();
       onClose();
-      e.currentTarget.reset();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Ошибка отправки');
     } finally {

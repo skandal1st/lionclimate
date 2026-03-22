@@ -95,6 +95,8 @@ sudo chown -R www-data:www-data /var/www/lionclimate.ru/server/data
 sudo systemctl restart lionclimate-api
 ```
 
+В режиме WAL рядом с `lionclimate.db` появляются **`lionclimate.db-wal`** и **`lionclimate.db-shm`** — они тоже должны принадлежать `www-data`. Если БД создавалась от `root`, снова выполните `chown -R` по каталогу `data/` и перезапустите сервис.
+
 Проверка: `curl -s http://127.0.0.1:3001/api/health` — в JSON должно быть `"dbWritable":true`. Если `false` — исправьте владельца/права на каталог из `DATABASE_PATH` в `server/.env`.
 
 ### nginx
