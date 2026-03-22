@@ -1,0 +1,23 @@
+# Скопировать в /etc/systemd/system/lionclimate-api.service
+# Подставьте путь к сайту и к node: which node
+#
+# sudo cp deploy/lionclimate-api.service.example /etc/systemd/system/lionclimate-api.service
+# sudo nano /etc/systemd/system/lionclimate-api.service   # проверить пути
+# sudo systemctl daemon-reload && sudo systemctl enable --now lionclimate-api
+
+[Unit]
+Description=Lion Climate API
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/lionclimate.ru/server
+# Не используйте EnvironmentFile для .env с ADMIN_PASSWORD_HASH — systemd портит символы $ в bcrypt.
+# Переменные читает Node из server/.env (см. server/src/loadEnv.js).
+ExecStart=/usr/bin/node /var/www/lionclimate.ru/server/src/index.js
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

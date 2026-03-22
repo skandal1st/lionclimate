@@ -23,6 +23,10 @@ npm start
 
 ### systemd (пример)
 
+Готовый шаблон для копирования: [`deploy/lionclimate-api.service.example`](deploy/lionclimate-api.service.example).
+
+**Важно:** первая строка файла юнита должна быть **`[Unit]`**. Если на строке 1 сразу `ExecStart=` или `EnvironmentFile=`, systemd выдаст `Assignment outside of section` и сервис не запустится.
+
 Файл `/etc/systemd/system/lionclimate-api.service`:
 
 ```ini
@@ -33,16 +37,45 @@ After=network.target
 [Service]
 Type=simple
 User=www-data
-WorkingDirectory=/var/www/lionclimate
-EnvironmentFile=/var/www/lionclimate/server/.env
-ExecStart=/usr/bin/node /var/www/lionclimate/server/src/index.js
+WorkingDirectory=/var/www/lionclimate.ru/server
+ExecStart=/usr/bin/node /var/www/lionclimate.ru/server/src/index.js
 Restart=on-failure
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 ```
 
+Переменные (`JWT_SECRET`, `ADMIN_PASSWORD_HASH` и т.д.) приложение читает из **`server/.env`** само; строку **`EnvironmentFile=`** в unit лучше не добавлять — иначе bcrypt-хэш с символами `$` может исказиться.
+
+Подставьте свой каталог вместо `/var/www/lionclimate.ru`, если он другой.
+
+**Файл `.env` обязан существовать** по пути из `EnvironmentFile` (скопируйте `server/.env.example` → `server/.env` и заполните). Иначе: `Failed to load environment files`. Временно можно использовать `EnvironmentFile=-/path/.env` (минус = не считать ошибкой отсутствие файла), но для прод лучше создать `.env`.
+
+**Вход в админку «неверный пароль» при bcrypt:** systemd при `EnvironmentFile=` может искажать строки с символом **`$`** (в хэше bcrypt их несколько). В коде включена загрузка `server/.env` с приоритетом над окружением systemd. Надёжный вариант — **убрать `EnvironmentFile=` из unit-файла** и оставить только `WorkingDirectory` + `ExecStart`: переменные тогда читает только Node из `server/.env`. Либо в unit вместо `EnvironmentFile` задать только безопасные переменные (`Environment=PORT=3001`).
+
+**Путь к `node`:** не обязательно `/usr/bin/node`. Узнайте: `which node` и подставьте полный путь в `ExecStart`.
+
 Затем: `sudo systemctl daemon-reload && sudo systemctl enable --now lionclimate-api`.
+
+#### Если `failed because of unavailable resources`
+
+1. Логи сервиса (там будет реальная причина):
+
+```bash
+sudo systemctl status lionclimate-api.service --no-pager -l
+sudo journalctl -xeu lionclimate-api.service -n 80 --no-pager
+```
+
+2. Запуск от того же пользователя, что в unit (часто `www-data`), вручную — увидите ошибку Node:
+
+```bash
+sudo -u www-data bash -c 'cd /var/www/lionclimate.ru/server && /usr/bin/node src/index.js'
+```
+
+Если `node` не в `/usr/bin`, замените на вывод `which node`.
+
+3. Частые причины: неверный `ExecStart` (нет файла `index.js` или не тот путь к сайту); неверный путь к `node`; отсутствует `server/.env` (без `JWT_SECRET` приложение может упасть при старте); нет прав у `www-data` на каталог/файлы; порт `PORT` уже занят другим процессом.
 
 ### nginx
 

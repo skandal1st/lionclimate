@@ -17,11 +17,11 @@ export function verifyToken(token) {
 }
 
 export async function verifyAdminPassword(plain) {
-  const hash = process.env.ADMIN_PASSWORD_HASH;
+  const hash = (process.env.ADMIN_PASSWORD_HASH || '').trim();
   if (hash) {
     return bcrypt.compare(plain, hash);
   }
-  const plainEnv = process.env.ADMIN_PASSWORD;
+  const plainEnv = (process.env.ADMIN_PASSWORD || '').trim();
   if (!plainEnv) {
     return false;
   }
