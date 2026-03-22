@@ -94,3 +94,5 @@ npm audit
 ```
 
 При необходимости: `npm audit fix` (без `--force`, если не уверены в breaking changes). Если что-то останется — смотрите детали: `npm audit --json` или отчёт по конкретному пакету; часть уязвимостей может относиться только к **devDependencies** или к инструментам сборки, не к рантайму API.
+
+**Уязвимости в `tar` через `@mapbox/node-pre-gyp` (bcrypt):** в `server/package.json` задано поле **`overrides`** с `tar@^7.5.11`, чтобы все вложенные зависимости подтянули исправленную версию. После `git pull` выполните `cd server && rm -rf node_modules package-lock.json && npm install` и снова `npm audit`. Если сборка нативных модулей вдруг упадёт (редко), пришлите лог — тогда можно подобрать другой вариант (например, только `npm audit fix` без overrides).

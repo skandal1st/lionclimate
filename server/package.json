@@ -16,5 +16,8 @@
     "express-rate-limit": "^7.4.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.0"
+  },
+  "overrides": {
+    "tar": "^7.5.11"
   }
 }
