@@ -32,7 +32,13 @@ export async function login(password: string): Promise<string> {
   });
   if (!r.ok) {
     const err = await r.json().catch(() => ({}));
-    throw new Error((err as { error?: string }).error || 'Ошибка входа');
+    const msg = (err as { error?: string }).error || 'Ошибка входа';
+    if (r.status === 503) {
+      throw new Error(
+        'Сервер не настроен: в server/.env нет ADMIN_PASSWORD_HASH или ADMIN_PASSWORD. См. NODE_DEPLOY.md'
+      );
+    }
+    throw new Error(msg);
   }
   const data = (await r.json()) as { token: string };
   setToken(data.token);

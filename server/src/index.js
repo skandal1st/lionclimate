@@ -5,7 +5,7 @@ import path from 'path';
 import rateLimit from 'express-rate-limit';
 
 import db from './db.js';
-import { signToken, verifyAdminPassword } from './auth.js';
+import { isAdminAuthConfigured, signToken, verifyAdminPassword } from './auth.js';
 import { requireAuth } from './middleware/auth.js';
 import { sendLeadToTelegram } from './telegram.js';
 import {
@@ -72,6 +72,10 @@ app.post('/api/leads', leadsLimiter, (req, res) => {
 // --- Auth ---
 app.post('/api/auth/login', async (req, res) => {
   const password = req.body?.password ?? '';
+  if (!isAdminAuthConfigured()) {
+    console.error('[auth] No ADMIN_PASSWORD_HASH or ADMIN_PASSWORD in server/.env');
+    return res.status(503).json({ error: 'Server misconfigured: admin password not set' });
+  }
   const ok = await verifyAdminPassword(password);
   if (!ok) {
     return res.status(401).json({ error: 'Invalid password' });
@@ -436,9 +440,22 @@ app.put('/api/admin/products/json/:id', requireAuth, (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true });
+  res.json({
+    ok: true,
+    adminAuthConfigured: isAdminAuthConfigured(),
+  });
 });
 
 app.listen(PORT, () => {
   console.log(`lionclimate-api listening on ${PORT}`);
+  if (!isAdminAuthConfigured()) {
+    console.warn('[lionclimate-api] WARNING: set ADMIN_PASSWORD_HASH or ADMIN_PASSWORD in server/.env');
+  } else if (
+    process.env.ADMIN_PASSWORD_HASH &&
+    String(process.env.ADMIN_PASSWORD_HASH).includes('replace')
+  ) {
+    console.warn(
+      '[lionclimate-api] ADMIN_PASSWORD_HASH still looks like a placeholder from .env.example — generate a real hash.'
+    );
+  }
 });

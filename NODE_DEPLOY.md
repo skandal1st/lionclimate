@@ -54,6 +54,15 @@ WantedBy=multi-user.target
 
 **Вход в админку «неверный пароль» при bcrypt:** systemd при `EnvironmentFile=` может искажать строки с символом **`$`** (в хэше bcrypt их несколько). В коде включена загрузка `server/.env` с приоритетом над окружением systemd. Надёжный вариант — **убрать `EnvironmentFile=` из unit-файла** и оставить только `WorkingDirectory` + `ExecStart`: переменные тогда читает только Node из `server/.env`. Либо в unit вместо `EnvironmentFile` задать только безопасные переменные (`Environment=PORT=3001`).
 
+**Админка всё равно не пускает — чеклист:**
+
+1. `curl -s https://ВАШ_ДОМЕН/api/health` — в ответе должно быть `"adminAuthConfigured": true`. Если `false`, в `server/.env` нет ни `ADMIN_PASSWORD_HASH`, ни `ADMIN_PASSWORD`.
+2. Хэш в `.env` — **одна строка**, без кавычек вокруг значения, без переноса строки посередине. Пример: `ADMIN_PASSWORD_HASH=$2b$10$...` (не `ADMIN_PASSWORD_HASH="$2b$10$..."` в nano, если кавычки попали в файл как часть значения — уберите).
+3. Сгенерируйте хэш заново на сервере и вставьте в `.env` одной строкой:
+   `cd /var/www/lionclimate.ru/server && node -p "require('bcrypt').hashSync('ВАШ_ПАРОЛЬ', 10)"`
+4. После правок: `sudo systemctl restart lionclimate-api`. Смотрите логи: `journalctl -u lionclimate-api -n 30 --no-pager` — при ошибке bcrypt в логе будет подсказка.
+5. Временно для проверки можно закомментировать `ADMIN_PASSWORD_HASH` и задать `ADMIN_PASSWORD=сложный_пароль` (только пока отлаживаете, потом верните хэш).
+
 **Путь к `node`:** не обязательно `/usr/bin/node`. Узнайте: `which node` и подставьте полный путь в `ExecStart`.
 
 Затем: `sudo systemctl daemon-reload && sudo systemctl enable --now lionclimate-api`.
