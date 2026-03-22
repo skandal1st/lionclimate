@@ -42,6 +42,11 @@ export default function HomePage() {
     }
   }, []);
 
+  const closeModals = useCallback(() => {
+    setContactOpen(false);
+    setConsultOpen(false);
+  }, []);
+
   useEffect(() => {
     openFromHash();
     window.addEventListener('hashchange', openFromHash);
@@ -57,11 +62,6 @@ export default function HomePage() {
     }
     return () => window.removeEventListener('keydown', onKey);
   }, [contactOpen, consultOpen, closeModals]);
-
-  const closeModals = useCallback(() => {
-    setContactOpen(false);
-    setConsultOpen(false);
-  }, []);
 
   async function handleContactSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
