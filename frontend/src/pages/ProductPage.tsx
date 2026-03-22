@@ -4,6 +4,7 @@ import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
 import { useContactModals } from '../context/ContactModalContext';
 import { apiUrl } from '../api';
+import { productImageUrl } from '../utils/productImageUrl';
 import type { Product } from '../types';
 
 export default function ProductPage() {
@@ -66,7 +67,7 @@ export default function ProductPage() {
                 <div className="product-card-left">
                   {product.image ? (
                     <div className="product-card-gallery">
-                      <img src={product.image} alt="" loading="eager" />
+                      <img src={productImageUrl(product.image)} alt="" loading="eager" />
                     </div>
                   ) : (
                     <div className="product-card-gallery product-card-no-image">

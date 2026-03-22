@@ -540,6 +540,21 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use((err, req, res, next) => {
+  if (err && typeof err === 'object' && typeof err.code === 'string' && err.code.startsWith('LIMIT_')) {
+    console.warn('[multer]', err.code, err.message);
+    if (res.headersSent) {
+      next(err);
+      return;
+    }
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'Файл слишком большой (максимум 8 МБ)' });
+    }
+    return res.status(400).json({ error: String(err.message || 'Ошибка загрузки файла') });
+  }
+  next(err);
+});
+
+app.use((err, req, res, next) => {
   if (req.originalUrl?.startsWith('/api')) {
     console.error('[api]', err);
     if (res.headersSent) {

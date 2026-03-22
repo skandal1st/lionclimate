@@ -2,14 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { apiFetch } from '../../api';
 import type { CharSchemaItem, Product } from '../../types';
+import { productImageUrl } from '../../utils/productImageUrl';
 
 const emptyChars: Record<string, string> = {};
-
-function publicImageUrl(path: string): string {
-  if (!path) return '';
-  if (/^https?:\/\//i.test(path)) return path;
-  return path.startsWith('/') ? path : `/${path}`;
-}
 
 export default function AdminProductEdit() {
   const { id } = useParams<{ id: string }>();
@@ -90,6 +85,15 @@ export default function AdminProductEdit() {
     setChars((prev) => ({ ...prev, [key]: value }));
   }
 
+  async function apiErrorMessage(r: Response): Promise<string> {
+    try {
+      const j = (await r.json()) as { error?: string };
+      return j.error || `Ошибка ${r.status}`;
+    } catch {
+      return `Ошибка ${r.status}`;
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
@@ -125,7 +129,10 @@ export default function AdminProductEdit() {
             method: 'PUT',
             body: fd,
           });
-          if (!r.ok) throw new Error();
+          if (!r.ok) {
+            alert(await apiErrorMessage(r));
+            throw new Error('save');
+          }
           const updated = (await r.json()) as Product;
           setStoredImage(updated.image || null);
           setPendingFile(null);
@@ -139,7 +146,10 @@ export default function AdminProductEdit() {
             method: 'POST',
             body: fd,
           });
-          if (!r.ok) throw new Error();
+          if (!r.ok) {
+            alert(await apiErrorMessage(r));
+            throw new Error('save');
+          }
           const created = (await r.json()) as Product;
           navigate(`/admin/products/${encodeURIComponent(created.id)}`, { replace: true });
           return;
@@ -149,7 +159,10 @@ export default function AdminProductEdit() {
           method: 'PUT',
           body: JSON.stringify(basePayload),
         });
-        if (!r.ok) throw new Error();
+        if (!r.ok) {
+          alert(await apiErrorMessage(r));
+          throw new Error('save');
+        }
         const updated = (await r.json()) as Product;
         setStoredImage(updated.image || null);
         if (updated.image && /^https?:\/\//i.test(updated.image)) {
@@ -160,13 +173,17 @@ export default function AdminProductEdit() {
           method: 'POST',
           body: JSON.stringify(basePayload),
         });
-        if (!r.ok) throw new Error();
+        if (!r.ok) {
+          alert(await apiErrorMessage(r));
+          throw new Error('save');
+        }
         const created = (await r.json()) as Product;
         navigate(`/admin/products/${encodeURIComponent(created.id)}`, { replace: true });
         return;
       }
       navigate('/admin/products');
-    } catch {
+    } catch (e) {
+      if (e instanceof Error && e.message === 'save') return;
       alert('Не удалось сохранить');
     } finally {
       setSaving(false);
@@ -213,9 +230,9 @@ export default function AdminProductEdit() {
           <label>Фото товара (файл)</label>
           <div className="admin-product-image-row">
             <div className="admin-product-image-preview">
-              {(previewUrl || (storedImage ? publicImageUrl(storedImage) : '') || imageUrl) ? (
+              {(previewUrl || (storedImage ? productImageUrl(storedImage) : '') || imageUrl) ? (
                 <img
-                  src={previewUrl || publicImageUrl(storedImage || '') || imageUrl}
+                  src={previewUrl || productImageUrl(storedImage || '') || imageUrl}
                   alt=""
                   style={{ maxHeight: 200, maxWidth: '100%', objectFit: 'contain', borderRadius: 8, border: '1px solid #263041' }}
                 />

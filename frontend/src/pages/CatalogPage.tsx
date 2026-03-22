@@ -4,6 +4,7 @@ import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
 import { useContactModals } from '../context/ContactModalContext';
 import { apiUrl } from '../api';
+import { productImageUrl } from '../utils/productImageUrl';
 import type { Product } from '../types';
 
 export default function CatalogPage() {
@@ -48,7 +49,7 @@ export default function CatalogPage() {
             <div className="catalog-grid">
               {products.map((p) => {
                 const productUrl = `/product/${encodeURIComponent(p.id)}`;
-                const imgSrc = p.image || '';
+                const imgSrc = productImageUrl(p.image);
                 return (
                   <div key={p.id} className="catalog-card">
                     {imgSrc ? (
