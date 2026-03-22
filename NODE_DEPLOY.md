@@ -88,7 +88,38 @@ sudo -u www-data bash -c 'cd /var/www/lionclimate.ru/server && /usr/bin/node src
 
 ### nginx
 
-Проксирование API на Node и отдача статики SPA + `try_files` для React Router:
+**Если `curl https://lionclimate.ru/api/health` отдаёт HTML с «404 Not Found» от nginx** — в конфиге **нет** прокси на Node для `/api/`, или блок попал не в тот `server { }` (другой виртуальный хост).
+
+1. Убедитесь, что API запущен локально:
+   ```bash
+   curl -s http://127.0.0.1:3001/api/health
+   ```
+   Должен быть JSON вида `{"ok":true,"adminAuthConfigured":...}`. Если здесь ошибка — сначала `systemctl status lionclimate-api`.
+
+2. В конфиге сайта **`server_name lionclimate.ru`** добавьте блоки из примера **[`deploy/nginx-lionclimate.example.conf`](deploy/nginx-lionclimate.example.conf)** (пути подставьте свои: `/var/www/lionclimate.ru`).
+
+   **Если после правок всё ещё HTML 404 на `/api/health`:** проверьте, что в **активном** конфиге реально есть `location /api/`:
+   ```bash
+   sudo nginx -T 2>/dev/null | grep -n "location /api"
+   curl -s http://127.0.0.1:3001/api/health
+   ```
+   Второй `curl` должен вернуть JSON — иначе чините `lionclimate-api`. Если JSON есть, а HTTPS — 404, nginx не подхватил правки (не тот файл, не тот `server { }`, нет `include`). Быстрый вариант — один раз подключить сниппет **[`deploy/snippets/lionclimate-node-api.conf`](deploy/snippets/lionclimate-node-api.conf)**:
+   ```bash
+   sudo cp /var/www/lionclimate.ru/deploy/snippets/lionclimate-node-api.conf /etc/nginx/snippets/
+   # Внутри server { listen 443 ... server_name lionclimate.ru; } сразу после ssl_certificate / строк с add_header вставьте одну строку:
+   # include /etc/nginx/snippets/lionclimate-node-api.conf;
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+3. Блок **`location /api/`** должен быть **внутри того же** `server { }`, что и SSL для вашего домена. Порядок: обычно сначала более специфичные `location` (`/api/`, `/img/`), затем общий `location /`.
+
+4. Проверка и перезагрузка:
+   ```bash
+   sudo nginx -t && sudo systemctl reload nginx
+   curl -s https://lionclimate.ru/api/health
+   ```
+
+Проксирование API и статика SPA:
 
 ```nginx
 location /api/ {
@@ -101,12 +132,12 @@ location /api/ {
 }
 
 location / {
-    root /var/www/lionclimate/dist;
+    root /var/www/lionclimate.ru/dist;
     try_files $uri $uri/ /index.html;
 }
 
 location /img/ {
-    alias /var/www/lionclimate/img/;
+    alias /var/www/lionclimate.ru/img/;
 }
 ```
 
