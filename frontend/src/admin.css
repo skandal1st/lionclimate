@@ -1,0 +1,221 @@
+/* Админка (дополнительно к admin/admin.css — компактные утилиты) */
+.admin-app {
+  min-height: 100vh;
+  background: #0f1419;
+  color: #e8eaed;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.admin-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  width: 220px;
+  padding: 1.25rem;
+  background: #151b22;
+  border-right: 1px solid #263041;
+}
+
+.admin-sidebar h2 {
+  font-size: 1rem;
+  margin: 0 0 1rem;
+  font-weight: 600;
+}
+
+.admin-sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.admin-sidebar a {
+  color: #9ab;
+  text-decoration: none;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+}
+
+.admin-sidebar a:hover,
+.admin-sidebar a.active {
+  color: #fff;
+  background: #1e2630;
+}
+
+.admin-main {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  overflow: auto;
+}
+
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #263041;
+  border-radius: 8px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid #263041;
+}
+
+.admin-table th {
+  background: #151b22;
+  font-weight: 600;
+}
+
+.admin-table tr:hover td {
+  background: #141a21;
+}
+
+.admin-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.admin-badge.new {
+  background: #1e3a5f;
+  color: #8ec5ff;
+}
+.admin-badge.in_progress {
+  background: #3d3419;
+  color: #f5d76e;
+}
+.admin-badge.done {
+  background: #1a3d2e;
+  color: #7dffb3;
+}
+.admin-badge.spam {
+  background: #3d1a1a;
+  color: #ff9e9e;
+}
+
+.admin-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f1419;
+}
+
+.admin-login-box {
+  width: 100%;
+  max-width: 380px;
+  padding: 2rem;
+  background: #151b22;
+  border-radius: 12px;
+  border: 1px solid #263041;
+}
+
+.admin-login-box h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.35rem;
+}
+
+.admin-login-box .muted {
+  color: #8a9;
+  font-size: 14px;
+  margin-bottom: 1.25rem;
+}
+
+.admin-form-group {
+  margin-bottom: 1rem;
+}
+
+.admin-form-group label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 14px;
+}
+
+.admin-form-group input,
+.admin-form-group textarea,
+.admin-form-group select {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid #263041;
+  background: #0f1419;
+  color: #e8eaed;
+  font-size: 14px;
+}
+
+.admin-btn {
+  display: inline-block;
+  padding: 0.55rem 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.admin-btn-primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+.admin-btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.admin-btn-secondary {
+  background: #263041;
+  color: #e8eaed;
+}
+
+.admin-btn-secondary:hover {
+  background: #324056;
+}
+
+.admin-error {
+  color: #f87171;
+  font-size: 14px;
+  margin-bottom: 0.75rem;
+}
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.chars-grid-admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.product-form-admin .form-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+}

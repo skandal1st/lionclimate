@@ -466,3 +466,7 @@ sudo systemctl status nginx
 sudo systemctl status apache2
 ```
 
+## Актуальный стек: React + Node API
+
+Основной сценарий развёртывания описан в **[NODE_DEPLOY.md](NODE_DEPLOY.md)** (сборка `frontend/` в `dist/`, процесс Node для `/api/`, nginx с `try_files` для SPA). Старая PHP-админка и `send-telegram.php` при этом не используются.
+

@@ -94,7 +94,7 @@
                 return;
             }
 
-            fetch('api/product.php?id=' + encodeURIComponent(id))
+            fetch('/api/products/' + encodeURIComponent(id))
                 .then(function(r) {
                     if (!r.ok) throw new Error('not found');
                     return r.json();

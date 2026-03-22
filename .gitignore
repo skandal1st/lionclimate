@@ -11,3 +11,9 @@ Thumbs.db
 .idea/
 .vscode/
 *.log
+
+node_modules/
+dist/
+server/data/
+.env
+server/.env

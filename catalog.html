@@ -79,7 +79,7 @@
             var empty = document.getElementById('catalogEmpty');
             var grid = document.getElementById('catalogGrid');
 
-            fetch('api/products.php')
+            fetch('/api/products')
                 .then(function(r) { return r.json(); })
                 .then(function(products) {
                     loading.style.display = 'none';

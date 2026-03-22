@@ -1,6 +1,6 @@
-// Конфигурация Telegram бота (замените на ваши данные)
-const TELEGRAM_BOT_TOKEN = '5762581110:AAEmw4kTEl72NRzh4RadGOw-gWpjMas2n_M'; // Замените на токен вашего Telegram бота
-const TELEGRAM_CHAT_ID = '433839797'; // Замените на ваш Chat ID
+// Устаревший фолбэк для статического сайта. Основной сайт: React (frontend/) + API POST /api/leads
+const TELEGRAM_BOT_TOKEN = '';
+const TELEGRAM_CHAT_ID = '';
 
 // Cookie плашка
 document.addEventListener('DOMContentLoaded', function() {
@@ -129,7 +129,7 @@ async function sendToTelegram(formData, formType) {
     const message = formData.get('message') || 'Не указано';
     
     // Используем PHP скрипт для отправки (обходит CORS и хранит токены на сервере)
-    const url = 'send-telegram.php';
+    const url = '/api/leads';
     
     try {
         const response = await fetch(url, {
@@ -151,8 +151,7 @@ async function sendToTelegram(formData, formType) {
         if (data.success) {
             return true;
         } else {
-            console.error('Ошибка отправки в Telegram:', data);
-            // Если PHP скрипт не настроен, пробуем прямой запрос (для тестирования)
+            console.error('Ошибка отправки заявки:', data);
             return await sendToTelegramDirect(formData, formType);
         }
     } catch (error) {
