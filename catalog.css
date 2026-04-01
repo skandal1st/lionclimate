@@ -15,8 +15,94 @@
 .catalog-description {
     font-size: 18px;
     color: var(--text-light, #666);
-    margin-bottom: 48px;
+    margin-bottom: 32px;
     max-width: 600px;
+}
+
+.catalog-filters {
+    margin-bottom: 32px;
+    padding: 20px 20px 22px;
+    background: var(--bg-white, #fff);
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: var(--radius, 12px);
+}
+
+.catalog-filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px 24px;
+}
+
+.catalog-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 160px;
+}
+
+.catalog-filter-field.catalog-filter-prices {
+    min-width: 220px;
+}
+
+.catalog-filter-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark, #1a1a1a);
+    letter-spacing: 0.02em;
+}
+
+.catalog-filter-select,
+.catalog-filter-input {
+    font-size: 15px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--text-dark, #1a1a1a);
+    font-family: inherit;
+}
+
+.catalog-filter-select {
+    cursor: pointer;
+    min-height: 42px;
+}
+
+.catalog-filter-select:focus,
+.catalog-filter-input:focus {
+    outline: none;
+    border-color: var(--accent, #c9a227);
+    box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.15);
+}
+
+.catalog-filter-price-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.catalog-filter-input {
+    width: 0;
+    min-width: 0;
+    flex: 1;
+}
+
+.catalog-filter-price-sep {
+    color: var(--text-light, #999);
+    flex-shrink: 0;
+}
+
+.catalog-filters-reset {
+    margin-left: auto;
+    align-self: flex-end;
+}
+
+.catalog-empty-filtered .btn-primary {
+    margin-top: 16px;
+}
+
+.catalog-empty-filtered {
+    padding: 40px 20px 20px;
 }
 
 .catalog-loading,
@@ -171,6 +257,21 @@ a.catalog-card-image:hover {
     .catalog-description {
         font-size: 16px;
         margin-bottom: 32px;
+    }
+
+    .catalog-filters-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .catalog-filter-field {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .catalog-filters-reset {
+        margin-left: 0;
+        width: 100%;
     }
 
     .catalog-grid {
