@@ -43,12 +43,31 @@ function rangesOverlap(
 
 const AREA_PRESETS: { id: string; label: string; range: { min: number; max: number } | null }[] = [
   { id: 'all', label: 'Любая площадь', range: null },
-  { id: 'to20', label: 'до 20 м²', range: { min: 0, max: 20 } },
+  { id: 'to20', label: 'до 20 м²', range: null },
   { id: '20_28', label: '20–28 м²', range: { min: 20, max: 28 } },
   { id: '28_35', label: '28–35 м²', range: { min: 28, max: 35 } },
   { id: '35_50', label: '35–50 м²', range: { min: 35, max: 50 } },
-  { id: 'from50', label: 'свыше 50 м²', range: { min: 50, max: 999 } },
+  { id: 'from50', label: 'свыше 50 м²', range: null },
 ];
+
+/**
+ * «до 20 м²» — только модели с паспортным максимумом ≤ 20 (не «пересечение» с [0,28]).
+ * Средние диапазоны — пересечение с ожидаемой площадью помещения.
+ * «свыше 50 м²» — модель рассчитана минимум на такую площадь (max ≥ 50).
+ */
+function matchesAreaPreset(
+  presetId: string,
+  pr: { min: number; max: number } | null,
+): boolean {
+  if (presetId === 'all') return true;
+  if (!pr) return false;
+  if (presetId === 'to20') return pr.max <= 20;
+  if (presetId === 'from50') return pr.max >= 50;
+  const preset = AREA_PRESETS.find((x) => x.id === presetId);
+  const band = preset?.range;
+  if (!band) return true;
+  return rangesOverlap(pr, band);
+}
 
 export default function CatalogPage() {
   const { openContact } = useContactModals();
@@ -87,16 +106,14 @@ export default function CatalogPage() {
     const pMax = priceMax.trim() === '' ? null : Number(priceMax.replace(/\s/g, '').replace(',', '.'));
     const hasPriceFilter =
       (pMin != null && !Number.isNaN(pMin)) || (pMax != null && !Number.isNaN(pMax));
-    const areaPreset = AREA_PRESETS.find((x) => x.id === areaPresetId);
-    const userArea = areaPreset?.range ?? null;
 
     return products.filter((p) => {
       if (brandId !== 'all') {
         if ((p.brand || '').trim() !== brandId) return false;
       }
-      if (userArea) {
+      if (areaPresetId !== 'all') {
         const pr = getProductPloshadRange(p);
-        if (!pr || !rangesOverlap(pr, userArea)) return false;
+        if (!matchesAreaPreset(areaPresetId, pr)) return false;
       }
       if (hasPriceFilter) {
         if (p.price == null || Number.isNaN(Number(p.price))) return false;
