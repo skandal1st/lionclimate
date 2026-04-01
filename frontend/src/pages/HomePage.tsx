@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
+import SeoHead from '../components/SeoHead';
 import { useContactModals } from '../context/ContactModalContext';
 
 export default function HomePage() {
@@ -16,6 +17,11 @@ export default function HomePage() {
 
   return (
     <>
+      <SeoHead
+        title="Lion Climate — продажа и установка кондиционеров в Москве и МО"
+        description="Розничная и оптовая продажа кондиционеров в Москве и Московской области. Монтаж и обслуживание с гарантией 1,5 года. Daikin, Hitachi, Samsung, MDV."
+        canonicalPath="/"
+      />
       {cookieBanner && (
         <div id="cookieBanner" className="cookie-banner show">
           <div className="cookie-content">
@@ -53,11 +59,11 @@ export default function HomePage() {
         </div>
         <div className="container">
           <div className="hero-content">
-            <h2 className="hero-title">
+            <h1 className="hero-title">
               <span className="hero-title-line">Розничная и оптовая продажа</span>
               <span className="hero-title-line hero-title-accent">кондиционеров</span>
               <span className="hero-title-line">с профессиональной установкой в Москве и МО.</span>
-            </h2>
+            </h1>
             <p className="hero-description">
               Широкий ассортимент кондиционеров ведущих брендов в Москве и Московской области. Розничная и оптовая продажа,
               профессиональная установка и обслуживание с гарантией качества 1.5 года. Работаем во всех районах МО.

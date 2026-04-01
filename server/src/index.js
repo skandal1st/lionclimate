@@ -28,7 +28,10 @@ import {
   writeProducts,
   getUploadDir,
   getUploadUrl,
+  ensureProductSlugs,
+  findProductByIdOrSlug,
 } from './productsStore.js';
+import { computeProductSlug } from './slug.js';
 import { CHARACTERISTICS_SCHEMA, buildCharacteristicsFromObject } from './characteristicsSchema.js';
 import multer from 'multer';
 import fs from 'fs';
@@ -253,7 +256,7 @@ app.get('/api/products', (req, res) => {
 
 app.get('/api/products/:id', (req, res) => {
   const products = readProducts();
-  const p = products.find((x) => x.id === req.params.id);
+  const p = findProductByIdOrSlug(products, req.params.id);
   if (!p) {
     return res.status(404).json({ error: 'not found' });
   }
@@ -349,6 +352,7 @@ app.post('/api/admin/products', requireAuth, upload.single('image'), (req, res) 
     is_active: data.is_active !== false && data.is_active !== '0' && data.is_active !== 0,
     created_at: new Date().toISOString().replace('T', ' ').slice(0, 19),
   };
+  product.slug = computeProductSlug(product);
 
   const su = String(data.supplier_url ?? '').trim();
   if (su && /^https?:\/\//i.test(su)) {
@@ -405,6 +409,9 @@ app.put('/api/admin/products/:id', requireAuth, upload.single('image'), (req, re
     characteristics,
     is_active: data.is_active !== false && data.is_active !== '0' && data.is_active !== 0,
   };
+  if (!product.slug) {
+    product.slug = computeProductSlug(product);
+  }
 
   const su = String(data.supplier_url ?? prev.supplier_url ?? '').trim();
   if (su && /^https?:\/\//i.test(su)) {
@@ -465,6 +472,7 @@ app.post('/api/admin/products/json', requireAuth, (req, res) => {
     is_active: data.is_active !== false,
     created_at: new Date().toISOString().replace('T', ' ').slice(0, 19),
   };
+  product.slug = computeProductSlug(product);
 
   const su = String(data.supplier_url ?? '').trim();
   if (su && /^https?:\/\//i.test(su)) {
@@ -514,6 +522,9 @@ app.put('/api/admin/products/json/:id', requireAuth, (req, res) => {
     characteristics,
     is_active: data.is_active !== false && data.is_active !== '0',
   };
+  if (!product.slug) {
+    product.slug = computeProductSlug(product);
+  }
 
   const su = String(data.supplier_url ?? prev.supplier_url ?? '').trim();
   if (su && /^https?:\/\//i.test(su)) {
@@ -529,6 +540,49 @@ app.put('/api/admin/products/json/:id', requireAuth, (req, res) => {
   products[idx] = product;
   writeProducts(products);
   res.json(product);
+});
+
+function escapeXml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+app.get('/sitemap.xml', (req, res) => {
+  const base = (process.env.SITE_URL || 'https://lionclimate.ru').replace(/\/$/, '');
+  const products = readProducts().filter((p) => !('is_active' in p) || p.is_active);
+  const today = new Date().toISOString().slice(0, 10);
+  const lines = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    '  <url>',
+    `    <loc>${escapeXml(`${base}/`)}</loc>`,
+    `    <lastmod>${today}</lastmod>`,
+    '    <changefreq>weekly</changefreq>',
+    '    <priority>1.0</priority>',
+    '  </url>',
+    '  <url>',
+    `    <loc>${escapeXml(`${base}/catalog`)}</loc>`,
+    `    <lastmod>${today}</lastmod>`,
+    '    <changefreq>weekly</changefreq>',
+    '    <priority>0.9</priority>',
+    '  </url>',
+  ];
+  for (const p of products) {
+    const slug = p.slug || computeProductSlug(p);
+    const loc = `${base}/product/${encodeURIComponent(slug)}`;
+    const lm = String(p.created_at || '').slice(0, 10) || today;
+    lines.push('  <url>');
+    lines.push(`    <loc>${escapeXml(loc)}</loc>`);
+    lines.push(`    <lastmod>${escapeXml(lm)}</lastmod>`);
+    lines.push('    <changefreq>weekly</changefreq>');
+    lines.push('    <priority>0.8</priority>');
+    lines.push('  </url>');
+  }
+  lines.push('</urlset>');
+  res.type('application/xml').send(lines.join('\n'));
 });
 
 app.get('/api/health', (req, res) => {
@@ -572,6 +626,8 @@ app.use((err, req, res, next) => {
   }
   next(err);
 });
+
+ensureProductSlugs();
 
 app.listen(PORT, () => {
   console.log(`lionclimate-api listening on ${PORT}`);

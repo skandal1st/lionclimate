@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import SeoHead from '../../components/SeoHead';
 import { apiFetch } from '../../api';
 import type { CrmCustomField } from '../../types';
 
@@ -91,6 +92,7 @@ export default function AdminCrmSettings() {
 
   return (
     <div>
+      <SeoHead title="Поля сделки (CRM) — Lion Climate" description="Настройка дополнительных полей CRM." noindex />
       <div className="admin-topbar">
         <h1 style={{ margin: 0, fontSize: '1.35rem' }}>Поля сделки (CRM)</h1>
       </div>

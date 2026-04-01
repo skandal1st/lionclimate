@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
+import SeoHead from '../components/SeoHead';
 import { useContactModals } from '../context/ContactModalContext';
 import { apiUrl } from '../api';
 import { productImageUrl } from '../utils/productImageUrl';
+import { productPublicPath } from '../utils/productUrl';
 import type { Product } from '../types';
 
 export default function CatalogPage() {
@@ -26,6 +28,11 @@ export default function CatalogPage() {
 
   return (
     <>
+      <SeoHead
+        title="Каталог кондиционеров в Москве и МО — Lion Climate"
+        description="Сплит-системы в розницу и оптом в Москве и Московской области. Доставка, профессиональная установка и сервис."
+        canonicalPath="/catalog"
+      />
       <PublicHeader />
       <main className="catalog-main">
         <div className="container">
@@ -48,13 +55,13 @@ export default function CatalogPage() {
           {products && products.length > 0 && (
             <div className="catalog-grid">
               {products.map((p) => {
-                const productUrl = `/product/${encodeURIComponent(p.id)}`;
+                const productUrl = productPublicPath(p);
                 const imgSrc = productImageUrl(p.image);
                 return (
                   <div key={p.id} className="catalog-card">
                     {imgSrc ? (
                       <Link to={productUrl} className="catalog-card-image">
-                        <img src={imgSrc} alt="" loading="lazy" />
+                        <img src={imgSrc} alt={p.name} loading="lazy" />
                       </Link>
                     ) : (
                       <div className="catalog-card-image catalog-card-no-image">

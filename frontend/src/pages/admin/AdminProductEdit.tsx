@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import SeoHead from '../../components/SeoHead';
 import { apiFetch } from '../../api';
 import type { CharSchemaItem, Product } from '../../types';
 import { productImageUrl } from '../../utils/productImageUrl';
@@ -191,11 +192,21 @@ export default function AdminProductEdit() {
   }
 
   if (loading) {
-    return <p>Загрузка...</p>;
+    return (
+      <>
+        <SeoHead title="Загрузка товара — Lion Climate" noindex />
+        <p>Загрузка...</p>
+      </>
+    );
   }
 
   return (
     <div>
+      <SeoHead
+        title={isNew ? 'Новый товар — Lion Climate' : 'Редактирование товара — Lion Climate'}
+        description="Управление карточкой товара в каталоге."
+        noindex
+      />
       <div className="admin-topbar">
         <h1 style={{ margin: 0, fontSize: '1.35rem' }}>{isNew ? 'Новый товар' : 'Редактирование'}</h1>
         <Link to="/admin/products" className="admin-btn admin-btn-secondary">

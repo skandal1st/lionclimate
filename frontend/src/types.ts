@@ -26,6 +26,8 @@ export interface CrmCustomField {
 
 export interface Product {
   id: string;
+  /** ЧПУ для URL /product/... стабильный после создания */
+  slug?: string;
   name: string;
   brand?: string;
   model?: string;

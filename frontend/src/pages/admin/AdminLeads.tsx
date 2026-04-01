@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DealCardModal from '../../components/admin/DealCardModal';
+import SeoHead from '../../components/SeoHead';
 import { apiFetch } from '../../api';
 import type { CrmCustomField, Lead, LeadStatus } from '../../types';
 
@@ -75,6 +76,7 @@ export default function AdminLeads() {
 
   return (
     <div>
+      <SeoHead title="Заявки (CRM) — Lion Climate" description="Заявки с сайта Lion Climate." noindex />
       <div className="admin-topbar">
         <h1 style={{ margin: 0, fontSize: '1.35rem' }}>Заявки (CRM)</h1>
       </div>

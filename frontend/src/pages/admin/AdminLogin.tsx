@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import SeoHead from '../../components/SeoHead';
 import { getToken, login } from '../../api';
 
 export default function AdminLogin() {
@@ -30,6 +31,7 @@ export default function AdminLogin() {
 
   return (
     <div className="admin-login-page">
+      <SeoHead title="Вход в админ-панель — Lion Climate" description="Служебный вход для сотрудников Lion Climate." noindex />
       <div className="admin-login-box">
         <h1>Lion Climate</h1>
         <p className="muted">Вход в админ-панель</p>

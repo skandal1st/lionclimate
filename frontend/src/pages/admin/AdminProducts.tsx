@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import SeoHead from '../../components/SeoHead';
 import { apiFetch } from '../../api';
 import type { Product } from '../../types';
 
@@ -41,6 +42,7 @@ export default function AdminProducts() {
 
   return (
     <div>
+      <SeoHead title="Товары — админка Lion Climate" description="Управление каталогом кондиционеров." noindex />
       <div className="admin-topbar">
         <h1 style={{ margin: 0, fontSize: '1.35rem' }}>Товары</h1>
         <Link to="/admin/products/new" className="admin-btn admin-btn-primary">

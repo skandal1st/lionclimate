@@ -1,25 +1,39 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
+import SeoHead from '../components/SeoHead';
 import { useContactModals } from '../context/ContactModalContext';
 import { apiUrl } from '../api';
 import { productImageUrl } from '../utils/productImageUrl';
+import { productPublicPath } from '../utils/productUrl';
 import type { Product } from '../types';
+
+function productMetaTitle(p: Product) {
+  const brand = p.brand ? ` ${p.brand}` : '';
+  return `${p.name}${brand} — купить в Москве | Lion Climate`;
+}
+
+function productMetaDescription(p: Product) {
+  const strip = (p.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (strip.length >= 50) return strip.slice(0, 160);
+  return `${p.name}: розница и опт, доставка и установка в Москве и МО. Lion Climate.`.slice(0, 160);
+}
 
 export default function ProductPage() {
   const { openContact } = useContactModals();
-  const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const { slugOrId } = useParams<{ slugOrId: string }>();
   const [product, setProduct] = useState<Product | null | undefined>(undefined);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (!id) {
+    if (!slugOrId) {
       setNotFound(true);
       setProduct(null);
       return;
     }
-    fetch(apiUrl(`/api/products/${encodeURIComponent(id)}`))
+    fetch(apiUrl(`/api/products/${encodeURIComponent(slugOrId)}`))
       .then((r) => {
         if (!r.ok) throw new Error('not found');
         return r.json();
@@ -37,10 +51,36 @@ export default function ProductPage() {
         setNotFound(true);
         setProduct(null);
       });
-  }, [id]);
+  }, [slugOrId]);
+
+  if (product && product.slug && slugOrId === product.id) {
+    return <Navigate to={productPublicPath(product)} replace />;
+  }
+
+  const seo =
+    product === undefined ? (
+      <SeoHead
+        title="Карточка товара — Lion Climate"
+        description="Загрузка каталога кондиционеров Lion Climate."
+        canonicalPath={`${location.pathname}${location.search}`}
+      />
+    ) : notFound || !product ? (
+      <SeoHead
+        title="Товар не найден — Lion Climate"
+        description="Запрошенный товар отсутствует в каталоге. Выберите кондиционер в каталоге или свяжитесь с нами."
+        noindex
+      />
+    ) : (
+      <SeoHead
+        title={productMetaTitle(product)}
+        description={productMetaDescription(product)}
+        canonicalPath={productPublicPath(product)}
+      />
+    );
 
   return (
     <>
+      {seo}
       <PublicHeader />
       <main className="product-page-main">
         <div className="container">
@@ -67,7 +107,7 @@ export default function ProductPage() {
                 <div className="product-card-left">
                   {product.image ? (
                     <div className="product-card-gallery">
-                      <img src={productImageUrl(product.image)} alt="" loading="eager" />
+                      <img src={productImageUrl(product.image)} alt={product.name} loading="eager" />
                     </div>
                   ) : (
                     <div className="product-card-gallery product-card-no-image">

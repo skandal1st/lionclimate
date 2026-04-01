@@ -1,4 +1,5 @@
 User-agent: *
 Disallow: /send-telegram.php
+Disallow: /admin
 
 Sitemap: https://lionclimate.ru/sitemap.xml

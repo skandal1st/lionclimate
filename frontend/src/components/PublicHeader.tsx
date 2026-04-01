@@ -13,7 +13,7 @@ export default function PublicHeader() {
           <div className="nav-wrapper">
             <div className="logo">
               <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-                <h1>Lion Climate</h1>
+                <p className="site-name">Lion Climate</p>
                 <p className="logo-subtitle">Продажа и установка кондиционеров</p>
               </Link>
             </div>
