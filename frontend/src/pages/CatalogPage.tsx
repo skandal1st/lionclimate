@@ -34,13 +34,6 @@ function getProductPloshadRange(p: Product): { min: number; max: number } | null
   return parsePloshadRange(row?.value);
 }
 
-function rangesOverlap(
-  a: { min: number; max: number },
-  b: { min: number; max: number },
-): boolean {
-  return a.max >= b.min && a.min <= b.max;
-}
-
 const AREA_PRESETS: { id: string; label: string; range: { min: number; max: number } | null }[] = [
   { id: 'all', label: 'Любая площадь', range: null },
   { id: 'to20', label: 'до 20 м²', range: null },
@@ -51,9 +44,10 @@ const AREA_PRESETS: { id: string; label: string; range: { min: number; max: numb
 ];
 
 /**
- * «до 20 м²» — только модели с паспортным максимумом ≤ 20 (не «пересечение» с [0,28]).
- * Средние диапазоны — пересечение с ожидаемой площадью помещения.
- * «свыше 50 м²» — модель рассчитана минимум на такую площадь (max ≥ 50).
+ * «до 20 м²» — паспортный максимум ≤ 20.
+ * Средние диапазоны (20–28, 28–35, 35–50) — верхняя граница площади по карточке попадает в выбранный интервал
+ * (чтобы «до 30 м²» не попадало в «20–28» из‑за пересечения диапазонов).
+ * «свыше 50 м²» — максимум ≥ 50.
  */
 function matchesAreaPreset(
   presetId: string,
@@ -66,7 +60,7 @@ function matchesAreaPreset(
   const preset = AREA_PRESETS.find((x) => x.id === presetId);
   const band = preset?.range;
   if (!band) return true;
-  return rangesOverlap(pr, band);
+  return pr.max >= band.min && pr.max <= band.max;
 }
 
 export default function CatalogPage() {
