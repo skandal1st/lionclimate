@@ -5,11 +5,12 @@
 }
 
 .catalog-title {
+    font-family: var(--font-display, system-ui, sans-serif);
     font-size: 48px;
-    font-weight: 300;
+    font-weight: 600;
     margin-bottom: 16px;
     color: var(--text-dark, #1a1a1a);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
 }
 
 .catalog-description {
