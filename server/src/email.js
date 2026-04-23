@@ -40,7 +40,7 @@ export async function sendLeadToEmail(payload, env) {
   const htmlBody = bodyLines.join('\n');
 
   // Unisender Go: POST /en/transactional/api/v1/email/send.json
-  const url = 'https://go1.unisender.ru/en/transactional/api/v1/email/send.json';
+  const url = (env.UNISENDER_GO_HOST || 'https://go2.unisender.ru') + '/en/transactional/api/v1/email/send.json';
 
   const toList = recipients.map((email) => ({ email }));
 
