@@ -23,6 +23,7 @@ function serializeLead(row) {
 import { isAdminAuthConfigured, signToken, verifyAdminPassword } from './auth.js';
 import { requireAuth } from './middleware/auth.js';
 import { sendLeadToTelegram } from './telegram.js';
+import { sendLeadToEmail } from './email.js';
 import {
   readProducts,
   writeProducts,
@@ -91,10 +92,9 @@ app.post('/api/leads', leadsLimiter, (req, res) => {
     const id = info.lastInsertRowid;
 
     setImmediate(() => {
-      sendLeadToTelegram(
-        { name, phone, service: service || 'Не указано', message: message || 'Не указано', formType },
-        process.env
-      ).catch((e) => console.error('[telegram]', e));
+      const notifyPayload = { name, phone, service: service || 'Не указано', message: message || 'Не указано', formType };
+      sendLeadToTelegram(notifyPayload, process.env).catch((e) => console.error('[telegram]', e));
+      sendLeadToEmail(notifyPayload, process.env).catch((e) => console.error('[email]', e));
     });
 
     return res.json({ success: true, id });
