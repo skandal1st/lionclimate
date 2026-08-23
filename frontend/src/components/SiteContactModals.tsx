@@ -106,6 +106,7 @@ export default function SiteContactModals({ contactOpen, consultOpen, onClose }:
             &times;
           </button>
           <h2>Оставить заявку</h2>
+          <p className="modal-sub">Перезвоним в ближайшее время, подберём кондиционер и назовём точную цену.</p>
           <form className="contact-form" onSubmit={handleContactSubmit}>
             <div className="form-group">
               <label htmlFor="site-contact-name">Ваше имя *</label>
@@ -150,7 +151,8 @@ export default function SiteContactModals({ contactOpen, consultOpen, onClose }:
           <button type="button" className="modal-close" aria-label="Закрыть" onClick={onClose}>
             &times;
           </button>
-          <h2>Бесплатная консультация</h2>
+          <h2>Рассчитать стоимость</h2>
+          <p className="modal-sub">Оставьте контакты — поможем с выбором и посчитаем монтаж под ключ.</p>
           <form className="contact-form" onSubmit={handleConsultSubmit}>
             <div className="form-group">
               <label htmlFor="site-consult-name">Ваше имя *</label>

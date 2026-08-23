@@ -1,45 +1,50 @@
-/* Каталог товаров */
+/* ============================================================
+   Каталог — мир «Климат под контролем»
+   ============================================================ */
 .catalog-main {
-    padding: 40px 0 80px;
+    padding: clamp(36px, 5vw, 64px) 0 clamp(64px, 8vw, 100px);
     min-height: 60vh;
 }
 
 .catalog-title {
-    font-family: var(--font-display, system-ui, sans-serif);
-    font-size: 48px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    color: var(--text-dark, #1a1a1a);
-    letter-spacing: -0.03em;
+    font-family: var(--font-sans);
+    font-size: clamp(30px, 4.4vw, 52px);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+    color: var(--ink);
+    margin-bottom: 14px;
 }
 
 .catalog-description {
-    font-size: 18px;
-    color: var(--text-light, #666);
+    font-size: clamp(16px, 1.6vw, 19px);
+    color: var(--ink-2);
     margin-bottom: 32px;
-    max-width: 600px;
+    max-width: 60ch;
 }
 
+/* ---- Фильтры ---- */
 .catalog-filters {
-    margin-bottom: 32px;
-    padding: 20px 20px 22px;
-    background: var(--bg-white, #fff);
-    border: 1px solid var(--border-color, #e0e0e0);
-    border-radius: var(--radius, 12px);
+    margin-bottom: 36px;
+    padding: 20px 22px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow);
 }
 
 .catalog-filters-row {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
-    gap: 16px 24px;
+    gap: 16px 22px;
 }
 
 .catalog-filter-field {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    min-width: 160px;
+    min-width: 168px;
 }
 
 .catalog-filter-field.catalog-filter-prices {
@@ -47,33 +52,35 @@
 }
 
 .catalog-filter-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-dark, #1a1a1a);
-    letter-spacing: 0.02em;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
 }
 
 .catalog-filter-select,
 .catalog-filter-input {
+    font-family: var(--font-sans);
     font-size: 15px;
-    padding: 10px 12px;
-    border: 1px solid var(--border-color, #e0e0e0);
-    border-radius: 8px;
-    background: #fff;
-    color: var(--text-dark, #1a1a1a);
-    font-family: inherit;
+    padding: 11px 13px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: var(--r-sm);
+    background: var(--card);
+    color: var(--ink);
 }
 
 .catalog-filter-select {
     cursor: pointer;
-    min-height: 42px;
+    min-height: 44px;
 }
 
 .catalog-filter-select:focus,
 .catalog-filter-input:focus {
     outline: none;
-    border-color: var(--accent, #c9a227);
-    box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.15);
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(23, 71, 224, 0.16);
 }
 
 .catalog-filter-price-inputs {
@@ -89,7 +96,7 @@
 }
 
 .catalog-filter-price-sep {
-    color: var(--text-light, #999);
+    color: var(--ink-3);
     flex-shrink: 0;
 }
 
@@ -98,19 +105,19 @@
     align-self: flex-end;
 }
 
-.catalog-empty-filtered .btn-primary {
-    margin-top: 16px;
-}
-
 .catalog-empty-filtered {
     padding: 40px 20px 20px;
+}
+
+.catalog-empty-filtered .btn-primary {
+    margin-top: 16px;
 }
 
 .catalog-loading,
 .catalog-empty {
     text-align: center;
-    padding: 60px 20px;
-    color: var(--text-light, #666);
+    padding: 64px 20px;
+    color: var(--ink-2);
     font-size: 18px;
 }
 
@@ -122,56 +129,62 @@
     margin-top: 20px;
 }
 
+/* ---- Сетка карточек ---- */
 .catalog-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 30px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
 }
 
 .catalog-card {
-    background: var(--bg-white, #fff);
-    border: 1px solid var(--border-color, #e0e0e0);
-    border-radius: var(--radius, 12px);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
     overflow: hidden;
-    transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
 }
 
 .catalog-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-    border-color: var(--text-dark, #1a1a1a);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--blue-100);
 }
 
 .catalog-card-image {
-    aspect-ratio: 4/3;
-    background: #f5f5f5;
+    aspect-ratio: 4 / 3;
+    background: linear-gradient(180deg, #ffffff 0%, var(--blue-050) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     text-decoration: none;
     color: inherit;
-}
-
-a.catalog-card-image:hover {
-    opacity: 0.95;
+    padding: 18px;
+    border-bottom: 1px solid var(--line);
 }
 
 .catalog-card-image img {
     width: 100%;
     height: 100%;
     object-fit: contain;
+    transition: transform var(--transition);
+}
+
+a.catalog-card-image:hover img {
+    transform: scale(1.04);
 }
 
 .catalog-card-no-image {
-    color: #999;
-    font-size: 14px;
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.05em;
 }
 
 .catalog-card-body {
-    padding: 24px;
+    padding: 22px;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -183,44 +196,43 @@ a.catalog-card-image:hover {
     display: block;
 }
 
-.catalog-card-title-link:hover .catalog-card-title {
-    color: var(--accent, #c9a227);
+.catalog-card-title {
+    font-family: var(--font-sans);
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.28;
+    color: var(--ink);
+    margin-bottom: 6px;
+    transition: color var(--transition);
 }
 
-.catalog-card-title {
-    font-size: 20px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: var(--text-dark, #1a1a1a);
-    line-height: 1.3;
-    transition: color 0.2s ease;
+.catalog-card-title-link:hover .catalog-card-title {
+    color: var(--blue);
 }
 
 .catalog-card-brand {
-    font-size: 14px;
-    color: var(--text-light, #666);
-    margin-bottom: 12px;
-}
-
-.catalog-card-desc {
-    font-size: 15px;
-    color: var(--text-light, #666);
-    line-height: 1.6;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.03em;
+    color: var(--ink-3);
     margin-bottom: 16px;
-    flex: 1;
 }
 
 .catalog-card-chars {
     list-style: none;
-    margin: 0 0 16px 0;
+    margin: 0 0 18px;
     padding: 0;
-    font-size: 14px;
-    color: var(--text-light, #666);
+    font-size: 13.5px;
+    color: var(--ink-2);
 }
 
 .catalog-card-chars li {
-    padding: 4px 0;
-    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
 }
 
 .catalog-card-chars li:last-child {
@@ -228,15 +240,17 @@ a.catalog-card-image:hover {
 }
 
 .catalog-card-chars strong {
-    color: var(--text-dark, #1a1a1a);
-    margin-right: 6px;
+    color: var(--ink-3);
+    font-weight: 500;
 }
 
 .catalog-card-price {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text-dark, #1a1a1a);
-    margin-bottom: 16px;
+    font-family: var(--font-sans);
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    margin: 4px 0 18px;
 }
 
 .catalog-card-btn {
@@ -247,19 +261,10 @@ a.catalog-card-image:hover {
 }
 
 .catalog-card-btn-view {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 @media (max-width: 768px) {
-    .catalog-title {
-        font-size: 32px;
-    }
-
-    .catalog-description {
-        font-size: 16px;
-        margin-bottom: 32px;
-    }
-
     .catalog-filters-row {
         flex-direction: column;
         align-items: stretch;
@@ -277,6 +282,5 @@ a.catalog-card-image:hover {
 
     .catalog-grid {
         grid-template-columns: 1fr;
-        gap: 24px;
     }
 }
